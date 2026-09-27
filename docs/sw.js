@@ -1,7 +1,7 @@
 // Unhook service worker.
 // index.html hentes alltid fra nettet først, så nye versjoner kommer automatisk.
 // Bump CACHE bare hvis du endrer ikoner eller manifest.
-const CACHE = "unhook-v1";
+const CACHE = "unhook-v2";
 const SHELL = ["./", "./index.html", "./manifest.json", "./icons/icon-192.png", "./icons/icon-512.png"];
 
 self.addEventListener("install", e => {
