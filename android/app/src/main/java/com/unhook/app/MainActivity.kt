@@ -45,7 +45,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @Deprecated("Enkel løsning uten Activity Result API")
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         web.evaluateJavascript("window.unhookResume && window.unhookResume()", null)
     }
