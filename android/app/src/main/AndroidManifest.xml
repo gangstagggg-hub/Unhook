@@ -14,6 +14,14 @@
     <!-- Kun for Google Fonts. Appen fungerer uten nett. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- Lar appen liste opp installerte apper, så du kan velge dem i stedet for å skrive navnet. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
     <application
         android:allowBackup="false"
         android:icon="@drawable/ic_launcher"

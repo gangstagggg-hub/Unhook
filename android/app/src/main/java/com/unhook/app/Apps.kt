@@ -28,7 +28,15 @@ object Apps {
         return if (trimmed.contains('.')) listOf(trimmed) else emptyList()
     }
 
-    fun label(pkg: String): String = known.entries.firstOrNull { pkg in it.value }?.key ?: pkg
+    /** Pakkene for en rad i app-listen: valgt pakkenavn hvis det finnes, ellers kjent navn. */
+    private fun packagesFor(o: JSONObject): List<String> {
+        val pkg = o.optString("pkg")
+        return if (pkg.isNotBlank()) listOf(pkg) else packagesFor(o.optString("name"))
+    }
+
+    private val customLabels = mutableMapOf<String, String>()
+
+    fun label(pkg: String): String = known.entries.firstOrNull { pkg in it.value }?.key ?: customLabels[pkg] ?: pkg
 
     /** Apper som er slått på i blokkeringslisten. */
     fun blockedPackages(settings: JSONObject): Set<String> {
@@ -36,7 +44,7 @@ object Apps {
         val arr = settings.optJSONArray("blocked") ?: return out
         for (i in 0 until arr.length()) {
             val o = arr.optJSONObject(i) ?: continue
-            if (o.optBoolean("on")) out += packagesFor(o.optString("name"))
+            if (o.optBoolean("on")) out += packagesFor(o)
         }
         return out
     }
@@ -46,7 +54,11 @@ object Apps {
         val out = known.values.flatten().toMutableSet()
         val arr = settings.optJSONArray("blocked") ?: return out
         for (i in 0 until arr.length()) {
-            arr.optJSONObject(i)?.let { out += packagesFor(it.optString("name")) }
+            arr.optJSONObject(i)?.let { o ->
+                val pkgs = packagesFor(o)
+                pkgs.forEach { customLabels[it] = o.optString("name") }
+                out += pkgs
+            }
         }
         return out
     }

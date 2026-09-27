@@ -6,6 +6,8 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import android.webkit.JavascriptInterface
+import org.json.JSONArray
+import org.json.JSONObject
 
 /** Metodene web-appen når via window.Android. */
 class Bridge(private val activity: Activity) {
@@ -49,6 +51,21 @@ class Bridge(private val activity: Activity) {
     /** Returnerer ferdige økter som JSON og tømmer køen. */
     @JavascriptInterface
     fun takeSessions(): String = Store.takeSessions(activity)
+
+    /** Alle apper med eget ikon i app-skuffen, sortert etter navn: [{name, pkg}]. */
+    @JavascriptInterface
+    fun installedApps(): String {
+        val pm = activity.packageManager
+        val launcher = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        val apps = pm.queryIntentActivities(launcher, 0)
+            .map { it.activityInfo.packageName to it.loadLabel(pm).toString() }
+            .filter { it.first != activity.packageName }
+            .distinctBy { it.first }
+            .sortedBy { it.second.lowercase() }
+        val arr = JSONArray()
+        apps.forEach { (pkg, name) -> arr.put(JSONObject().put("name", name).put("pkg", pkg)) }
+        return arr.toString()
+    }
 
     @JavascriptInterface
     fun currentSession(): String = Store.current ?: "null"

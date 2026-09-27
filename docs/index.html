@@ -128,6 +128,7 @@ svg.chart{width:100%;height:auto;display:block}
 .period-top{display:flex;gap:8px;align-items:center;margin-bottom:10px}
 .period-top input[type=text]{font-weight:600}
 .times{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.times input{flex:1;min-width:0}
 
 /* Widget */
 .widget{width:170px;aspect-ratio:1;border-radius:26px;background:var(--accent);color:var(--accent-ink);padding:16px;display:flex;flex-direction:column;justify-content:space-between}
@@ -230,19 +231,30 @@ nav button[aria-selected="true"]{color:var(--accent);font-weight:600}
       <div class="add"><input type="text" id="altInput" placeholder="F.eks. lese en bok" aria-label="Nytt alternativ" enterkeyhint="done"><button type="button" class="btn primary" id="altAdd">Legg til</button></div>
     </section>
 
-    <h2>Blokkerte apper</h2>
-    <section class="card">
-      <p class="muted small" style="margin-bottom:6px">Blokkeres i de faste periodene under. Egne apper kan legges til med navn eller pakkenavn (f.eks. com.snapchat.android).</p>
-      <div id="overlayBox"></div>
-      <ul class="alts" id="blockList"></ul>
-      <div class="add"><input type="text" id="blockInput" placeholder="Navn eller pakkenavn" aria-label="Navn eller pakkenavn" enterkeyhint="done"><button type="button" class="btn primary" id="blockAdd">Legg til</button></div>
-    </section>
+    <div id="webOnly" class="hidden">
+      <h2>Automatisk registrering og blokkering</h2>
+      <section class="card">
+        <p class="small" style="margin-bottom:10px">Denne versjonen kjører i nettleseren, og nettlesere har ikke lov til å se eller stoppe andre apper. Derfor må du starte økter selv her.</p>
+        <p class="small muted">Automatiske økter, varsel når du åpner Instagram eller Snapchat, og blokkering i faste tider krever Android-appen.</p>
+      </section>
+    </div>
 
-    <h2>Faste perioder</h2>
-    <section class="card">
-      <div id="periodList"></div>
-      <button class="btn ghost block" id="addPeriod" style="margin-top:12px">Legg til periode</button>
-    </section>
+    <div id="nativeOnly" class="hidden">
+      <h2>Apper</h2>
+      <section class="card">
+        <p class="muted small" style="margin-bottom:6px">Unhook registrerer tid i disse appene. Slå på bryteren for de som skal være sperret i blokkeringstidene under.</p>
+        <div id="overlayBox"></div>
+        <ul class="alts" id="blockList"></ul>
+        <button type="button" class="btn primary block" id="pickApp" style="margin-top:12px">Legg til app</button>
+      </section>
+
+      <h2>Blokkeringstider</h2>
+      <section class="card">
+        <p class="muted small" style="margin-bottom:6px">I disse tidene lukkes appene som er slått på over, og du sendes til hjemskjermen.</p>
+        <div id="periodList"></div>
+        <button class="btn ghost block" id="addPeriod" style="margin-top:12px">Legg til tidsrom</button>
+      </section>
+    </div>
 
     <h2>Varsler</h2>
     <section class="card">
@@ -299,7 +311,7 @@ const TRIGGERS = ["Kjedsomhet","Stress","Ensomhet","Utsettelse","Trøtthet","Van
 const defaults = () => ({
   why: "",
   alternatives: ["Gå en tur rundt kvartalet","Lese ti sider i en bok","Sende en melding til en venn","Strekke ut i fem minutter","Drikke et glass vann","Skrive ned hva du tenker på"],
-  blocked: [{name:"Instagram",on:true},{name:"TikTok",on:true},{name:"Facebook",on:false},{name:"YouTube",on:false},{name:"Nettleser",on:false}],
+  blocked: [{name:"Instagram",on:true},{name:"TikTok",on:true},{name:"Facebook",on:false},{name:"Snapchat",on:false},{name:"YouTube",on:false},{name:"Nettleser",on:false}],
   periods: [{id:1,name:"Kveld",from:"22:00",to:"07:00",days:[1,2,3,4,5,6,0]}],
   sessions: [], triggers: [], lastLong: null, installedAt: Date.now(), active: null, theme: null
 });
@@ -450,8 +462,8 @@ function renderHome(){
   if (S.why.trim()){ w.className = "why"; w.textContent = S.why; }
   else { w.className = "why empty"; w.innerHTML = 'Skriv ned hvorfor du vil kutte ned. <a href="#" data-go="more" style="color:var(--accent)">Legg til ditt hvorfor</a>'; }
   const ap = activePeriods(), apps = S.blocked.filter(b => b.on).map(b => b.name);
-  $("#blockBanner").innerHTML = ap.length && apps.length
-    ? `<div class="banner"><span>🔒</span><p><b>${esc(ap[0].name)} er aktiv.</b> ${esc(apps.join(", "))} er blokkert til ${esc(ap[0].to)}.</p></div>` : "";
+  $("#blockBanner").innerHTML = NATIVE && ap.length && apps.length
+    ? `<div class="banner"><span>🔒</span><p><b>Blokkering er på.</b> ${esc(apps.join(", "))} er sperret til ${esc(ap[0].to)}.</p></div>` : "";
   renderSession();
   $("#homeAlts").innerHTML = pick(S.alternatives, 3).map(a => `<li>${esc(a)}</li>`).join("") || `<li class="muted">Legg til alternativer under Mer.</li>`;
 }
@@ -690,14 +702,15 @@ function seedDemo(){
 function renderMore(){
   $("#whyInput").value = S.why;
   $("#altList").innerHTML = S.alternatives.map((a, i) => `<li><span>${esc(a)}</span><button class="x" aria-label="Fjern ${esc(a)}" data-alt="${i}">×</button></li>`).join("");
+  $("#webOnly").classList.toggle("hidden", !!NATIVE);
+  $("#nativeOnly").classList.toggle("hidden", !NATIVE);
   $("#blockList").innerHTML = S.blocked.map((b, i) => `<li><span>${esc(b.name)}</span><span style="display:flex;align-items:center;gap:4px">
     <button class="toggle" role="switch" aria-checked="${b.on}" aria-label="Blokker ${esc(b.name)}" data-block="${i}"></button>
     <button class="x" aria-label="Fjern ${esc(b.name)}" data-unblock="${i}">×</button></span></li>`).join("");
   $("#periodList").innerHTML = S.periods.map((p, i) => `<div class="period">
-    <div class="period-top"><input type="text" value="${esc(p.name)}" data-pname="${i}" aria-label="Navn på periode"><button class="x" aria-label="Fjern periode" data-pdel="${i}">×</button></div>
-    <div class="times"><input type="time" value="${p.from}" data-pfrom="${i}" aria-label="Fra"><span class="muted">til</span><input type="time" value="${p.to}" data-pto="${i}" aria-label="Til"></div>
+    <div class="times"><input type="time" value="${p.from}" data-pfrom="${i}" aria-label="Fra"><span class="muted">til</span><input type="time" value="${p.to}" data-pto="${i}" aria-label="Til"><button class="x" aria-label="Fjern tidsrom" data-pdel="${i}">×</button></div>
     <div class="chips">${DAYS.map(([d, l]) => `<button class="chip sm" aria-pressed="${p.days.includes(d)}" data-pday="${i}:${d}">${l}</button>`).join("")}</div>
-  </div>`).join("") || '<p class="muted small">Ingen perioder.</p>';
+  </div>`).join("") || '<p class="muted small">Ingen blokkeringstider.</p>';
   $("#overlayBox").innerHTML = NATIVE && !callNative("canDrawOverlays")
     ? `<div class="banner" style="margin:10px 0 4px;flex-direction:column"><p>For å blokkere apper må Unhook få lov til å vises over andre apper.</p><button class="btn primary" id="overlayBtn">Gi tillatelse</button></div>` : "";
   const ob = $("#overlayBtn"); if (ob) ob.onclick = () => callNative("openOverlaySettings");
@@ -725,12 +738,31 @@ function addFrom(inputSel, addFn, msg){
   addFn(v); inp.value = ""; save(); renderMore(); toast(msg);
 }
 const addAlt = () => addFrom("#altInput", v => S.alternatives.push(v), "Alternativ lagt til");
-const addBlock = () => addFrom("#blockInput", v => S.blocked.push({ name: v, on: true }), "App lagt til");
 $("#altAdd").onclick = addAlt;
-$("#blockAdd").onclick = addBlock;
 $("#altInput").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); addAlt(); } };
-$("#blockInput").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); addBlock(); } };
-$("#addPeriod").onclick = () => { S.periods.push({ id: Date.now(), name: "Ny periode", from: "08:00", to: "09:00", days: [1, 2, 3, 4, 5] }); save(); renderMore(); };
+// Velg blant appene som faktisk er installert på telefonen (kun Android-appen).
+$("#pickApp").onclick = () => {
+  let apps = []; try { apps = JSON.parse(callNative("installedApps") || "[]"); } catch {}
+  const have = new Set(S.blocked.map(b => b.pkg).filter(Boolean));
+  const list = apps.filter(a => !have.has(a.pkg));
+  openSheet(`<h2>Legg til app</h2>
+    <input type="text" id="appSearch" placeholder="Søk" aria-label="Søk etter app" style="margin-bottom:8px">
+    <ul class="alts" id="appList"></ul>`);
+  const draw = q => {
+    const f = list.filter(a => a.name.toLowerCase().includes(q.toLowerCase()));
+    $("#appList").innerHTML = f.map(a => `<li><button class="chip" style="border:0;padding:4px 0;background:none;text-align:left;width:100%" data-pkg="${esc(a.pkg)}">${esc(a.name)}</button></li>`).join("")
+      || '<li class="muted small">Fant ingen apper.</li>';
+  };
+  draw("");
+  $("#appSearch").oninput = e => draw(e.target.value);
+  $("#appList").onclick = e => {
+    const b = e.target.closest("[data-pkg]"); if (!b) return;
+    const a = list.find(x => x.pkg === b.dataset.pkg);
+    S.blocked.push({ name: a.name, pkg: a.pkg, on: true });
+    save(); closeSheet(); renderMore(); toast(`${a.name} lagt til`);
+  };
+};
+$("#addPeriod").onclick = () => { S.periods.push({ id: Date.now(), from: "08:00", to: "16:00", days: [1, 2, 3, 4, 5] }); save(); renderMore(); };
 $("#tab-more").addEventListener("click", e => {
   const t = e.target.closest("button"); if (!t) return;
   const d = t.dataset;
@@ -744,8 +776,7 @@ $("#tab-more").addEventListener("click", e => {
 });
 $("#tab-more").addEventListener("change", e => {
   const d = e.target.dataset;
-  if (d.pname) S.periods[+d.pname].name = e.target.value || "Periode";
-  else if (d.pfrom) S.periods[+d.pfrom].from = e.target.value || "00:00";
+  if (d.pfrom) S.periods[+d.pfrom].from = e.target.value || "00:00";
   else if (d.pto) S.periods[+d.pto].to = e.target.value || "00:00";
   else return;
   save();

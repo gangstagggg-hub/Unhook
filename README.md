@@ -81,7 +81,7 @@ APK-en havner i `android/app/build/outputs/apk/debug/`.
 
 `UsageMonitorService` leser app-hendelser hvert 3. sekund. En økt starter når en sosial app eller nettleser kommer i forgrunnen, og fortsetter hvis du bytter mellom slike apper. Den avsluttes når du har vært borte i 20 sekunder, eller når skjermen slås av. Økter under 30 sekunder lagres ikke.
 
-Kjente apper står i `Apps.kt`. Andre apper kan legges til i blokkeringslisten med pakkenavn, for eksempel `com.snapchat.android`.
+Kjente apper står i `Apps.kt`. Andre apper velger du fra listen over installerte apper under *Mer → Apper*.
 
 For nettlesere vet appen bare at nettleseren er åpen, ikke hvilken side du er på.
 
