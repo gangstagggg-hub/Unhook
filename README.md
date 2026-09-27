@@ -70,6 +70,8 @@ APK-en havner i `android/app/build/outputs/apk/debug/`.
 
 ### Tillatelser
 
+Første gang appen åpnes, viser den en oppsettsveiledning som går gjennom alle tillatelsene én etter én. Den kan åpnes igjen under *Mer → Oppsett*.
+
 | Tillatelse | Hvorfor |
 |---|---|
 | Tilgang til bruksdata | Se hvilken app som er åpen. Slås på under *Innstillinger → Tilgang til bruksdata*. |

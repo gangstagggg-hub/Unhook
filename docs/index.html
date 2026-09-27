@@ -160,6 +160,23 @@ nav button[aria-selected="true"]{color:var(--accent);font-weight:600}
 .toast.show{opacity:1}
 .back{display:inline-flex;align-items:center;gap:6px;border:0;background:none;color:var(--accent);font-weight:600;padding:6px 0;margin:0}
 .back svg{width:18px;height:18px}
+/* Oppsettsveiledning */
+.onboard{position:fixed;inset:0;z-index:30;background:var(--bg);overflow:auto;padding:calc(18px + env(safe-area-inset-top,0px)) 22px calc(20px + env(safe-area-inset-bottom,0px))}
+.onboard .inner{max-width:480px;min-height:100%;margin:0 auto;display:flex;flex-direction:column}
+.ob-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+.ob-dots{display:flex;gap:6px}
+.ob-dots i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.ob-dots i.on{background:var(--accent);width:22px;border-radius:8px}
+.ob-skip{border:0;background:none;color:var(--muted);font-size:14px;padding:6px 0}
+.ob-num{font-family:var(--display);font-weight:800;font-size:15px;color:var(--accent);margin-bottom:6px}
+.ob-title{font-family:var(--display);font-weight:800;font-size:30px;line-height:1.15;letter-spacing:-.02em;margin:0 0 14px}
+.ob-body{color:var(--muted);margin-bottom:22px}
+.ob-body p+p{margin-top:10px}
+.ob-status{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:8px 14px;font-size:14px;font-weight:600;margin-bottom:16px}
+.ob-status.ok{background:var(--accent-soft);color:var(--accent)}
+.ob-status.no{background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.ob-nav{margin-top:auto;padding-top:28px;display:flex;gap:10px}
+.ob-nav .btn{flex:1}
 .hidden{display:none!important}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -281,6 +298,14 @@ nav button[aria-selected="true"]{color:var(--accent);font-weight:600}
       </section>
     </div>
 
+    <div id="setupBox" class="hidden">
+      <h2>Oppsett</h2>
+      <section class="card">
+        <p class="small muted" style="margin-bottom:12px">Gå gjennom tillatelsene på nytt hvis noe ikke virker som det skal.</p>
+        <button class="btn ghost block" id="setupBtn">Vis oppsettsveiledningen</button>
+      </section>
+    </div>
+
     <h2>Personvern</h2>
     <section class="card">
       <p class="small" style="margin-bottom:14px">Alt du registrerer lagres bare på denne enheten. Ingenting sendes til en server.</p>
@@ -299,6 +324,7 @@ nav button[aria-selected="true"]{color:var(--accent);font-weight:600}
 <div class="scrim" id="scrim"></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div id="sheetBody"></div></div>
 <div class="toast" id="toast"></div>
+<div class="onboard hidden" id="onboard" role="dialog" aria-modal="true" aria-label="Oppsett"><div class="inner" id="obInner"></div></div>
 
 <script>
 const KEY = "unhook-v1";
@@ -371,11 +397,12 @@ function go(tab){
 }
 // Tilbake-knappen på Android: lukk ark, ellers gå til I dag. Returnerer false når appen kan lukkes.
 window.unhookBack = () => {
+  if (obOpen) { if (obStep > 0) { obStep--; renderOnboard(); } return true; }
   if ($("#sheet").classList.contains("open")) { closeSheet(); return true; }
   if (currentTab !== "home") { go("home"); return true; }
   return false;
 };
-window.unhookResume = () => { pullNative(); render(currentTab); };
+window.unhookResume = () => { pullNative(); render(currentTab); if (obOpen) renderOnboard(); };
 document.addEventListener("click", e => {
   const g = e.target.closest("[data-go]"); if (g) { e.preventDefault(); closeSheet(); go(g.dataset.go); }
   const o = e.target.closest("[data-open]"); if (o && o.dataset.open === "trigger") openTrigger();
@@ -862,6 +889,69 @@ if (canPWA){
   // iOS har ikke beforeinstallprompt, så vis instruksjonene første gang.
   if (isIOS()) setTimeout(askInstall, 1500);
   updateInstallBox();
+}
+
+/* ---------- Oppsettsveiledning (første gang i Android-appen) ---------- */
+let obOpen = false, obStep = 0;
+const OB = [
+  { title: "Velkommen til Unhook",
+    body: `<p>Unhook følger med når du åpner sosiale medier, foreslår noe annet å gjøre, og kan sperre apper når du vil ha ro.</p><p>For at det skal virke, må telefonen gi appen noen tillatelser. Dette tar under ett minutt.</p>` },
+  { title: "Hvorfor vil du kutte ned?",
+    body: `<p>Skriv én setning til deg selv. Den vises i varslene når du åpner en av appene.</p>`,
+    extra: () => `<textarea id="obWhy" placeholder="Jeg vil kutte ned fordi …" style="margin-bottom:6px">${esc(S.why)}</textarea>` },
+  { title: "Slå på varsler",
+    body: `<p>Unhook gir beskjed når du åpner en av appene, og igjen etter 5, 10 og 15 minutter.</p>`,
+    check: () => !!callNative("notificationsEnabled"), okText: "Varsler er på",
+    action: "Slå på varsler", run: () => callNative("requestNotifications") },
+  { title: "Gi tilgang til bruksdata",
+    body: `<p>Da ser Unhook hvilken app som er åpen, og kan starte økter automatisk.</p><p>Trykk på knappen, finn <b>Unhook</b> i listen og slå på <b>Tillat tilgang til bruksdata</b>. Gå så tilbake hit.</p>`,
+    check: () => !!callNative("hasUsageAccess"), okText: "Tilgang er gitt",
+    action: "Åpne innstillinger", run: () => callNative("openUsageAccessSettings") },
+  { title: "Tillat visning over andre apper",
+    body: `<p>Dette trengs for at Unhook kan sperre apper i blokkeringstidene du velger.</p><p>Trykk på knappen og slå på bryteren for <b>Unhook</b>. Gå så tilbake hit.</p>`,
+    check: () => !!callNative("canDrawOverlays"), okText: "Tillatelse er gitt",
+    action: "Åpne innstillinger", run: () => callNative("openOverlaySettings") },
+  { title: "La Unhook kjøre i bakgrunnen",
+    body: `<p>Mange telefoner stopper apper i bakgrunnen for å spare batteri. Da får du ingen varsler.</p><p>Trykk på knappen, velg <b>Batteri</b> og så <b>Ubegrenset</b>. På Samsung bør du også sjekke at Unhook ikke står under <b>Sovende apper</b>.</p>`,
+    check: () => !!callNative("ignoresBatteryOptimizations"), okText: "Batterisparing er slått av for Unhook",
+    action: "Åpne app-innstillinger", run: () => callNative("openAppSettings") },
+  { title: "Alt er klart",
+    body: `<p>Unhook kjører nå i bakgrunnen, også når appen er lukket. Du ser det på varselet <b>Unhook følger med</b>.</p><p>Prøv å åpne Instagram eller en annen app i listen. Innen noen sekunder skal du få et forslag til noe annet å gjøre.</p>` }
+];
+function saveObWhy(){ const t = $("#obWhy"); if (t) { S.why = t.value; save(); } }
+function renderOnboard(){
+  const st = OB[obStep], last = obStep === OB.length - 1;
+  let status = "";
+  if (st.check){
+    const ok = st.check();
+    status = `<div class="ob-status ${ok ? "ok" : "no"}">${ok ? "✓ " + st.okText : "Ikke slått på ennå"}</div>
+      ${ok ? "" : `<button class="btn primary block" id="obAction">${st.action}</button>`}`;
+  }
+  $("#obInner").innerHTML = `
+    <div class="ob-top">
+      <div class="ob-dots">${OB.map((_, i) => `<i class="${i === obStep ? "on" : ""}"></i>`).join("")}</div>
+      ${last ? "" : '<button class="ob-skip" id="obSkip">Hopp over</button>'}
+    </div>
+    <div class="ob-num">${obStep + 1} av ${OB.length}</div>
+    <h2 class="ob-title">${st.title}</h2>
+    <div class="ob-body">${st.body}</div>
+    ${st.extra ? st.extra() : ""}
+    ${status}
+    <div class="ob-nav">
+      ${obStep > 0 ? '<button class="btn ghost" id="obBack">Tilbake</button>' : ""}
+      <button class="btn ${st.check && !st.check() ? "ghost" : "primary"}" id="obNext">${last ? "Ferdig" : obStep === 0 ? "Kom i gang" : st.check && !st.check() ? "Senere" : "Neste"}</button>
+    </div>`;
+  const a = $("#obAction"); if (a) a.onclick = st.run;
+  const b = $("#obBack"); if (b) b.onclick = () => { saveObWhy(); obStep--; renderOnboard(); };
+  const k = $("#obSkip"); if (k) k.onclick = () => { saveObWhy(); closeOnboard(); };
+  $("#obNext").onclick = () => { saveObWhy(); if (last) closeOnboard(); else { obStep++; renderOnboard(); $("#onboard").scrollTop = 0; } };
+}
+function openOnboard(){ obOpen = true; obStep = 0; $("#onboard").classList.remove("hidden"); renderOnboard(); }
+function closeOnboard(){ obOpen = false; S.onboarded = true; save(); $("#onboard").classList.add("hidden"); render(currentTab); }
+$("#setupBtn").onclick = openOnboard;
+if (NATIVE){
+  $("#setupBox").classList.remove("hidden");
+  if (!S.onboarded) openOnboard();
 }
 
 pullNative();

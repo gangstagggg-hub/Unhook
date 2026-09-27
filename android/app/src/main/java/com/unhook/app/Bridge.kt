@@ -1,9 +1,13 @@
 package com.unhook.app
 
+import android.Manifest
 import android.app.Activity
 import android.app.NotificationManager
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
+import android.os.PowerManager
 import android.provider.Settings
 import android.webkit.JavascriptInterface
 import org.json.JSONArray
@@ -33,6 +37,34 @@ class Bridge(private val activity: Activity) {
     @JavascriptInterface
     fun notificationsEnabled(): Boolean =
         activity.getSystemService(NotificationManager::class.java).areNotificationsEnabled()
+
+    /** Spør om varseltillatelse (Android 13+). Er den avslått før, åpnes innstillingene i stedet. */
+    @JavascriptInterface
+    fun requestNotifications() {
+        val needsAsk = Build.VERSION.SDK_INT >= 33 &&
+            activity.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        if (needsAsk && !asked) {
+            asked = true
+            activity.runOnUiThread {
+                activity.requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), MainActivity.REQ_NOTIFICATIONS)
+            }
+        } else {
+            openNotificationSettings()
+        }
+    }
+    private var asked = false
+
+    @JavascriptInterface
+    fun ignoresBatteryOptimizations(): Boolean =
+        activity.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(activity.packageName)
+
+    /** App-info for Unhook, der brukeren kan sette Batteri til «Ubegrenset». */
+    @JavascriptInterface
+    fun openAppSettings() {
+        activity.startActivity(
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${activity.packageName}"))
+        )
+    }
 
     @JavascriptInterface
     fun openNotificationSettings() {

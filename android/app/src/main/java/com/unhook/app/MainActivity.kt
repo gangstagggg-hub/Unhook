@@ -1,9 +1,6 @@
 package com.unhook.app
 
-import android.Manifest
 import android.annotation.SuppressLint
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -11,6 +8,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 
 class MainActivity : ComponentActivity() {
+
+    companion object {
+        const val REQ_NOTIFICATIONS = 1
+    }
 
     private lateinit var web: WebView
 
@@ -40,12 +41,13 @@ class MainActivity : ComponentActivity() {
                 }
             }
         })
+        // Tillatelsene spørres om i oppsettsveiledningen i web-appen.
+    }
 
-        if (Build.VERSION.SDK_INT >= 33 &&
-            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
-            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1)
-        }
+    @Deprecated("Enkel løsning uten Activity Result API")
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        web.evaluateJavascript("window.unhookResume && window.unhookResume()", null)
     }
 
     override fun onResume() {
