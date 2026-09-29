@@ -17,6 +17,8 @@ class BlockActivity : ComponentActivity() {
     companion object {
         const val EXTRA_APP = "app"
         const val EXTRA_UNTIL = "until"
+        const val EXTRA_TIMEOUT = "timeout"
+        const val EXTRA_DAILY = "daily"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,15 +41,26 @@ class BlockActivity : ComponentActivity() {
     private fun render(intent: Intent) {
         val app = intent.getStringExtra(EXTRA_APP) ?: "Appen"
         val until = intent.getStringExtra(EXTRA_UNTIL).orEmpty()
+        val timeout = intent.getBooleanExtra(EXTRA_TIMEOUT, false)
+        val daily = intent.getBooleanExtra(EXTRA_DAILY, false)
 
         val title = TextView(this).apply {
-            text = "$app er blokkert"
+            text = when {
+                daily -> "Dagens grense er nådd"
+                timeout -> "Tiden er brukt opp"
+                else -> "$app er blokkert"
+            }
             textSize = 32f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             setTextColor(getColor(R.color.ink))
         }
         val body = TextView(this).apply {
-            text = if (until.isNotEmpty()) "Blokkeringen varer til $until. Gjør noe annet en stund." else "Gjør noe annet en stund."
+            text = when {
+                daily -> "Alle appene på lista er sperret resten av dagen. De åpner igjen ved midnatt."
+                timeout -> "Alle appene på lista er sperret til kl. $until. Gjør noe annet en stund."
+                until.isNotEmpty() -> "Blokkeringen varer til $until. Gjør noe annet en stund."
+                else -> "Gjør noe annet en stund."
+            }
             textSize = 17f
             setTextColor(getColor(R.color.muted))
             setPadding(0, dp(12), 0, dp(32))

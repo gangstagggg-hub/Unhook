@@ -14,6 +14,9 @@ import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
 import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * Følger med på hvilken app som er i forgrunnen ved hjelp av UsageStatsManager.
@@ -60,6 +63,13 @@ class UsageMonitorService : Service() {
     private var notifiedSteps = 0
     private var lastBlockAt = 0L
     private var lastReminderAt = 0L
+
+    // Tidsavbrudd for alle appene på lista samlet: brukt tid, sist brukt og når sperren slutter.
+    // Lever bare i minnet.
+    private var lastTickAt = 0L
+    private var usedMs = 0L
+    private var lastUsedAt = 0L
+    private var timeoutUntil = 0L
 
     private val loop = object : Runnable {
         override fun run() {
@@ -115,6 +125,8 @@ class UsageMonitorService : Service() {
         }
         val now = System.currentTimeMillis()
         readForeground(now)
+        val delta = if (lastTickAt == 0L) 0L else minOf(now - lastTickAt, TICK_MS * 2)
+        lastTickAt = now
 
         val settings = Store.settings(this)
         val fg = if (power.isInteractive) foreground else null
@@ -138,10 +150,15 @@ class UsageMonitorService : Service() {
                 Notifier.overLimit(this, steps * 5, sessionApp, settings)
             }
 
-            if (fg in Apps.blockedPackages(settings) && now - lastBlockAt > 4_000L) {
-                Schedule.activePeriod(settings)?.let { period ->
-                    lastBlockAt = now
-                    block(sessionApp, period.optString("to"))
+            if (fg in Apps.blockedPackages(settings)) {
+                val period = Schedule.activePeriod(settings)
+                if (period != null) {
+                    if (now - lastBlockAt > 4_000L) {
+                        lastBlockAt = now
+                        block(sessionApp, period.optString("to"), false)
+                    }
+                } else if (!checkDaily(sessionApp, settings, now, delta)) {
+                    checkTimeout(sessionApp, settings, now, delta)
                 }
             }
         } else if (sessionStart != 0L && (fg == null || now - lastSeenTracked > GRACE_MS)) {
@@ -157,13 +174,77 @@ class UsageMonitorService : Service() {
         Notifier.cancelAlert(this)
     }
 
-    private fun block(app: String, until: String) {
+    /**
+     * Tidsavbrudd: tiden i alle appene på lista telles samlet. Når [limit] minutter er brukt opp,
+     * sperres alle appene på lista i [reset] minutter. Så nullstilles tiden. Tiden nullstilles også
+     * hvis du har vært borte fra appene like lenge uten å bli sperret.
+     * Denne funksjonen kalles bare når appen i forgrunnen står på lista.
+     */
+    private fun checkTimeout(app: String, settings: JSONObject, now: Long, delta: Long) {
+        val t = settings.optJSONObject("timeout")
+        if (t == null || !t.optBoolean("on")) {
+            usedMs = 0L
+            lastUsedAt = 0L
+            timeoutUntil = 0L
+            return
+        }
+        val limitMs = t.optInt("limit", 2).coerceAtLeast(1) * 60_000L
+        val resetMs = t.optInt("reset", 10).coerceAtLeast(1) * 60_000L
+
+        if (timeoutUntil != 0L) {
+            if (now < timeoutUntil) {
+                showTimeoutBlock(app, timeoutUntil, now)
+                return
+            }
+            timeoutUntil = 0L
+            usedMs = 0L
+        }
+
+        if (lastUsedAt != 0L && now - lastUsedAt >= resetMs) usedMs = 0L
+        lastUsedAt = now
+
+        usedMs += delta
+        if (usedMs >= limitMs) {
+            timeoutUntil = now + resetMs
+            showTimeoutBlock(app, timeoutUntil, now)
+        }
+    }
+
+    /**
+     * Daglig grense: tiden i alle appene på lista telles samlet per dag. Når grensen er nådd,
+     * sperres appene resten av dagen. Tiden nullstilles ved midnatt og lagres, så den overlever omstart.
+     * Returnerer true hvis appene er sperret nå.
+     */
+    private fun checkDaily(app: String, settings: JSONObject, now: Long, delta: Long): Boolean {
+        val d = settings.optJSONObject("daily")
+        if (d == null || !d.optBoolean("on")) return false
+        val limitMs = d.optInt("min", 60).coerceAtLeast(1) * 60_000L
+        var used = Store.dailyUsed(this)
+        if (used < limitMs) used = Store.addDaily(this, delta)
+        if (used < limitMs) return false
+        if (now - lastBlockAt > 4_000L) {
+            lastBlockAt = now
+            block(app, "midnatt", false, true)
+        }
+        return true
+    }
+
+    private fun showTimeoutBlock(app: String, until: Long, now: Long) {
+        if (now - lastBlockAt <= 4_000L) return
+        lastBlockAt = now
+        val hm = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(until))
+        block(app, hm, true)
+    }
+
+    private fun block(app: String, until: String, timeout: Boolean, daily: Boolean = false) {
         if (Settings.canDrawOverlays(this)) {
             startActivity(
                 Intent(this, BlockActivity::class.java)
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                     .putExtra(BlockActivity.EXTRA_APP, app)
                     .putExtra(BlockActivity.EXTRA_UNTIL, until)
+                    .putExtra(BlockActivity.EXTRA_TIMEOUT, timeout)
+                    .putExtra(BlockActivity.EXTRA_DAILY, daily)
             )
         } else {
             Notifier.blocked(this, app, until)

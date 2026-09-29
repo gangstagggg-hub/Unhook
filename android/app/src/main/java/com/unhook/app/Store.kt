@@ -3,6 +3,9 @@ package com.unhook.app
 import android.content.Context
 import org.json.JSONArray
 import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * Deler data mellom bakgrunnstjenesten og web-appen.
@@ -17,6 +20,26 @@ object Store {
     var current: String? = null
 
     private fun prefs(c: Context) = c.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+    private fun today(): String = SimpleDateFormat("yyyyMMdd", Locale.US).format(Date())
+
+    /** Tid brukt i dag i de valgte appene, i millisekunder. Nullstilles ved midnatt. */
+    @Synchronized
+    fun dailyUsed(c: Context): Long {
+        val p = prefs(c)
+        return if (p.getString("dailyDay", "") == today()) p.getLong("dailyMs", 0L) else 0L
+    }
+
+    /** Legger til brukt tid og returnerer summen for i dag. */
+    @Synchronized
+    fun addDaily(c: Context, deltaMs: Long): Long {
+        val p = prefs(c)
+        val day = today()
+        val base = if (p.getString("dailyDay", "") == day) p.getLong("dailyMs", 0L) else 0L
+        val total = base + deltaMs
+        p.edit().putString("dailyDay", day).putLong("dailyMs", total).apply()
+        return total
+    }
 
     fun saveSettings(c: Context, json: String) {
         prefs(c).edit().putString("settings", json).apply()

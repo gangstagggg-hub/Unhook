@@ -94,7 +94,7 @@ p{margin:0}
 .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .chip.sm{padding:5px 10px;font-size:13px}
 
-input[type=text],input[type=time],textarea{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:11px 13px}
+input[type=text],input[type=time],input[type=number],textarea{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:11px 13px}
 textarea{resize:vertical;min-height:80px}
 .add{display:flex;gap:8px;margin-top:12px}
 .add input{flex:1}
@@ -177,6 +177,16 @@ nav button[aria-selected="true"]{color:var(--accent);font-weight:600}
 .ob-status.no{background:var(--surface);border:1px solid var(--line);color:var(--muted)}
 .ob-nav{margin-top:auto;padding-top:28px;display:flex;gap:10px}
 .ob-nav .btn{flex:1}
+.switch-row{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.num-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line);margin-top:14px}
+.num-row label{flex:1;font-size:15px}
+.num-row .inp{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px}
+.num-row input{width:76px;text-align:center;font-weight:600}
+#toFields{transition:opacity .2s}
+.opt{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:16px}
+.opt[aria-checked="true"]{border-color:var(--accent);color:var(--accent)}
+.opt[aria-checked="true"] .muted{color:var(--muted)}
+.opt-check{width:20px;height:20px;flex:none}
 .hidden{display:none!important}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -188,7 +198,7 @@ nav button[aria-selected="true"]{color:var(--accent);font-weight:600}
       <h1 class="logo">Unhook</h1>
       <svg class="logo-ring" aria-hidden="true"><rect class="runner" pathLength="100"/></svg>
     </div>
-    <button class="icon-btn" id="themeBtn" aria-label="Bytt mellom lys og mørk modus"></button>
+    <button class="icon-btn" id="themeBtn" aria-label="Utseende: lys, mørk eller telefonens standard" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/></svg></button>
   </header>
 
   <!-- I DAG -->
@@ -203,6 +213,7 @@ nav button[aria-selected="true"]{color:var(--accent);font-weight:600}
     <div id="blockBanner"></div>
 
     <section class="card" id="sessionCard"></section>
+    <section class="card hidden" id="dailyCard"></section>
 
     <div class="row" style="margin-bottom:12px">
       <button class="btn ghost" data-open="trigger">Logg trigger</button>
@@ -259,10 +270,33 @@ nav button[aria-selected="true"]{color:var(--accent);font-weight:600}
     <div id="nativeOnly" class="hidden">
       <h2>Apper</h2>
       <section class="card">
-        <p class="muted small" style="margin-bottom:6px">Unhook registrerer tid i disse appene. Slå på bryteren for de som skal være sperret i blokkeringstidene under.</p>
+        <p class="muted small" style="margin-bottom:6px">Unhook registrerer tid i disse appene. Slå på bryteren for de som skal sperres i blokkeringstidene, ha tidsavbrudd og telle mot den daglige grensen.</p>
         <div id="overlayBox"></div>
         <ul class="alts" id="blockList"></ul>
         <button type="button" class="btn primary block" id="pickApp" style="margin-top:12px">Legg til app</button>
+      </section>
+
+      <h2>Tidsavbrudd</h2>
+      <section class="card">
+        <div class="switch-row">
+          <div><h3>Sperr etter bruk</h3><p class="muted small" id="toSummary"></p></div>
+          <button class="toggle" role="switch" id="toOn" aria-label="Tidsavbrudd på eller av" aria-checked="false"></button>
+        </div>
+        <div id="toFields">
+          <div class="num-row"><label for="toLimit">Sperr alle appene etter</label><span class="inp"><input type="number" id="toLimit" inputmode="numeric" min="1" max="240">min</span></div>
+          <div class="num-row" style="margin-top:0"><label for="toReset">Åpne igjen og nullstill etter</label><span class="inp"><input type="number" id="toReset" inputmode="numeric" min="1" max="240">min</span></div>
+        </div>
+      </section>
+
+      <h2>Daglig grense</h2>
+      <section class="card">
+        <div class="switch-row">
+          <div><h3>Maks tid per dag</h3><p class="muted small" id="dySummary"></p></div>
+          <button class="toggle" role="switch" id="dyOn" aria-label="Daglig grense på eller av" aria-checked="false"></button>
+        </div>
+        <div id="dyFields">
+          <div class="num-row"><label for="dyMin">Maks tid i appene per dag</label><span class="inp"><input type="number" id="dyMin" inputmode="numeric" min="1" max="1440">min</span></div>
+        </div>
       </section>
 
       <h2>Blokkeringstider</h2>
@@ -339,17 +373,21 @@ const defaults = () => ({
   alternatives: ["Gå en tur rundt kvartalet","Lese ti sider i en bok","Sende en melding til en venn","Strekke ut i fem minutter","Drikke et glass vann","Skrive ned hva du tenker på"],
   blocked: [{name:"Instagram",on:true},{name:"TikTok",on:true},{name:"Facebook",on:false},{name:"Snapchat",on:false},{name:"YouTube",on:false},{name:"Nettleser",on:false}],
   periods: [{id:1,name:"Kveld",from:"22:00",to:"07:00",days:[1,2,3,4,5,6,0]}],
-  sessions: [], triggers: [], lastLong: null, installedAt: Date.now(), active: null, theme: null
+  sessions: [], triggers: [], lastLong: null, installedAt: Date.now(), active: null, theme: null,
+  timeout: { on: false, limit: 2, reset: 10 },
+  daily: { on: false, min: 60 }
 });
 
 let S;
 try { S = Object.assign(defaults(), JSON.parse(localStorage.getItem(KEY)) || {}); } catch { S = defaults(); }
+S.timeout = Object.assign({ on: false, limit: 2, reset: 10 }, S.timeout || {});
+S.daily = Object.assign({ on: false, min: 60 }, S.daily || {});
 // Gjør gamle standardalternativer om til infinitiv, så de passer etter «Hva med å …».
 { const from = ["Gå en tur rundt kvartalet","Les ti sider i en bok","Send en melding til en venn","Strekk ut i fem minutter","Drikk et glass vann","Skriv ned hva du tenker på"], to = ["Gå en tur rundt kvartalet","Lese ti sider i en bok","Sende en melding til en venn","Strekke ut i fem minutter","Drikke et glass vann","Skrive ned hva du tenker på"];
   S.alternatives = S.alternatives.map(a => from.includes(a) ? to[from.indexOf(a)] : a); }
 const save = () => {
   try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {}
-  callNative("syncSettings", JSON.stringify({ why: S.why, alternatives: S.alternatives, blocked: S.blocked, periods: S.periods }));
+  callNative("syncSettings", JSON.stringify({ why: S.why, alternatives: S.alternatives, blocked: S.blocked, periods: S.periods, timeout: S.timeout, daily: S.daily }));
 };
 save();
 
@@ -370,15 +408,31 @@ const MAX_STEPS = 3; // varsler ved 5, 10 og 15 minutter
 const toast = msg => { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 2200); };
 
 /* ---------- Theme ---------- */
-const sun = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
-const moon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>';
-const isDark = () => S.theme ? S.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
 function applyTheme(){
+  // Uten data-theme følger siden telefonens innstilling (prefers-color-scheme).
   if (S.theme) document.documentElement.setAttribute("data-theme", S.theme);
   else document.documentElement.removeAttribute("data-theme");
-  $("#themeBtn").innerHTML = isDark() ? sun : moon;
 }
-$("#themeBtn").onclick = () => { S.theme = isDark() ? "light" : "dark"; save(); applyTheme(); };
+const THEMES = [
+  { value: null,    label: "Telefonens standard", hint: "Følger lys eller mørk innstilling på telefonen" },
+  { value: "light", label: "Lys",                 hint: "Alltid lyst utseende" },
+  { value: "dark",  label: "Mørk",                hint: "Alltid mørkt utseende" }
+];
+const check = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:20px;height:20px"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+$("#themeBtn").onclick = () => {
+  const cur = S.theme || null;
+  openSheet(`<h2>Utseende</h2>
+    <div role="radiogroup" aria-label="Utseende" style="display:grid;gap:10px">
+      ${THEMES.map((t, i) => `<button class="opt" role="radio" aria-checked="${t.value === cur}" data-theme-i="${i}">
+        <span><b>${t.label}</b><span class="muted small" style="display:block">${t.hint}</span></span>
+        <span class="opt-check">${t.value === cur ? check : ""}</span></button>`).join("")}
+    </div>`);
+  $("#sheetBody [role=radiogroup]").onclick = e => {
+    const b = e.target.closest("[data-theme-i]"); if (!b) return;
+    S.theme = THEMES[+b.dataset.themeI].value;
+    save(); applyTheme(); closeSheet();
+  };
+};
 applyTheme();
 
 /* ---------- Tabs ---------- */
@@ -492,6 +546,7 @@ function renderHome(){
   $("#blockBanner").innerHTML = NATIVE && ap.length && apps.length
     ? `<div class="banner"><span>🔒</span><p><b>Blokkering er på.</b> ${esc(apps.join(", "))} er sperret til ${esc(ap[0].to)}.</p></div>` : "";
   renderSession();
+  renderDailyCard();
   $("#homeAlts").innerHTML = pick(S.alternatives, 3).map(a => `<li>${esc(a)}</li>`).join("") || `<li class="muted">Legg til alternativer under Mer.</li>`;
 }
 
@@ -538,7 +593,7 @@ function tick(){
   if (NATIVE){
     if (nativeTicks++ % 5 === 0) pullNative();
     renderStreak();
-    if (currentTab === "home") renderSession();
+    if (currentTab === "home") { renderSession(); renderDailyCard(); }
     return;
   }
   renderStreak();
@@ -741,14 +796,77 @@ function renderMore(){
   $("#overlayBox").innerHTML = NATIVE && !callNative("canDrawOverlays")
     ? `<div class="banner" style="margin:10px 0 4px;flex-direction:column"><p>For å blokkere apper må Unhook få lov til å vises over andre apper.</p><button class="btn primary" id="overlayBtn">Gi tillatelse</button></div>` : "";
   const ob = $("#overlayBtn"); if (ob) ob.onclick = () => callNative("openOverlaySettings");
-  renderNotif(); renderStreak();
+  renderTimeout(); renderDaily(); renderNotif(); renderStreak();
 }
+const minTxt = n => `${n} ${n === 1 ? "minutt" : "minutter"}`;
+function renderTimeout(){
+  const t = S.timeout;
+  $("#toOn").setAttribute("aria-checked", t.on);
+  $("#toFields").style.opacity = t.on ? 1 : .45;
+  $("#toLimit").disabled = $("#toReset").disabled = !t.on;
+  if (document.activeElement !== $("#toLimit")) $("#toLimit").value = t.limit;
+  if (document.activeElement !== $("#toReset")) $("#toReset").value = t.reset;
+  $("#toSummary").textContent = t.on
+    ? `Etter ${minTxt(t.limit)} totalt i appene over sperres alle appene på lista. Etter ${minTxt(t.reset)} er de åpne igjen, og tiden nullstilles.`
+    : "Slått av. Slå på for å sperre appene på lista når du har brukt dem for lenge.";
+}
+const validMin = v => Number.isInteger(v) && v >= 1 && v <= 240;
+function bindTimeoutInput(sel, key){
+  const el = $(sel);
+  el.oninput = () => { const v = Number(el.value); if (el.value !== "" && validMin(v)) { S.timeout[key] = v; save(); renderTimeout(); } };
+  el.onchange = () => {
+    const v = Number(el.value);
+    if (el.value === "" || !validMin(v)) { toast("Velg et helt tall mellom 1 og 240"); el.value = S.timeout[key]; }
+    else { S.timeout[key] = v; save(); }
+    renderTimeout();
+  };
+}
+$("#toOn").onclick = () => { S.timeout.on = !S.timeout.on; save(); renderTimeout(); };
+
+/* ---------- Daglig grense ---------- */
+function renderDaily(){
+  const d = S.daily;
+  $("#dyOn").setAttribute("aria-checked", d.on);
+  $("#dyFields").style.opacity = d.on ? 1 : .45;
+  $("#dyMin").disabled = !d.on;
+  if (document.activeElement !== $("#dyMin")) $("#dyMin").value = d.min;
+  $("#dySummary").textContent = d.on
+    ? `Har du brukt appene på lista i ${minTxt(d.min)} i løpet av en dag, sperres de resten av dagen. Tiden nullstilles ved midnatt.`
+    : "Slått av. Slå på for å sette en øvre grense for hele dagen.";
+}
+function renderDailyCard(){
+  const c = $("#dailyCard");
+  if (!NATIVE || !S.daily.on){ c.classList.add("hidden"); return; }
+  const used = Number(callNative("dailyUsedMs")) || 0, limit = S.daily.min * 6e4;
+  const pct = Math.min(100, used / limit * 100);
+  c.classList.remove("hidden");
+  c.innerHTML = `<h3>${used >= limit ? "Dagens grense er nådd" : "Tid i dag"}</h3>
+    <p class="muted small">${Math.floor(used / 6e4)} av ${S.daily.min} min brukt i de valgte appene</p>
+    <div class="bar ${pct >= 100 ? "over" : ""}" style="margin-bottom:0"><i style="width:${pct}%"></i></div>`;
+}
+const validDay = v => Number.isInteger(v) && v >= 1 && v <= 1440;
+{
+  const el = $("#dyMin");
+  el.oninput = () => { const v = Number(el.value); if (el.value !== "" && validDay(v)) { S.daily.min = v; save(); renderDaily(); } };
+  el.onchange = () => {
+    const v = Number(el.value);
+    if (el.value === "" || !validDay(v)) { toast("Velg et helt tall mellom 1 og 1440"); el.value = S.daily.min; }
+    else { S.daily.min = v; save(); }
+    renderDaily();
+  };
+}
+$("#dyOn").onclick = () => { S.daily.on = !S.daily.on; save(); renderDaily(); };
+bindTimeoutInput("#toLimit", "limit");
+bindTimeoutInput("#toReset", "reset");
 function renderNotif(){
   if (NATIVE){
     const on = callNative("notificationsEnabled");
-    $("#notifStatus").textContent = on ? "Varsler er på. Du får et forslag når du åpner en av appene, og etter 5, 10 og 15 minutter." : "Varsler er slått av for Unhook. Slå dem på for å få beskjed når du har scrollet for lenge.";
+    $("#notifStatus").textContent = on
+      ? "Varsler er på. Du får et forslag når du åpner en av appene, og etter 5, 10 og 15 minutter. Vil du ikke ha dem, kan du skru dem av i telefonens innstillinger. Der kan du også skru av bare «Scrollevarsler» og beholde resten."
+      : "Varsler er slått av for Unhook. Appene telles og sperres fortsatt, men du får ingen forslag.";
     $("#notifBtn").classList.add("hidden");
-    $("#notifSettingsBtn").classList.toggle("hidden", !!on);
+    $("#notifSettingsBtn").classList.remove("hidden");
+    $("#notifSettingsBtn").textContent = on ? "Skru av varsler i innstillinger" : "Slå på varsler i innstillinger";
     return;
   }
   const s = !("Notification" in window) ? "unsupported" : Notification.permission;

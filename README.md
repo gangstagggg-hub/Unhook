@@ -5,11 +5,13 @@ En app som hjelper deg å slutte med doom scrolling. Unhook varsler deg når du 
 ## Funksjoner
 
 - Varsel med et forslag fra alternativlisten («Hva med å gå en tur?») når du åpner en av de valgte appene, og igjen etter 5, 10 og 15 minutter
+- Daglig grense: en øvre grense for hvor lenge du kan bruke de valgte appene per dag. Når den er nådd, sperres appene til midnatt
 - Streak som teller tiden siden sist du scrollet mer enn 5 minutter i strekk
 - Guidet pusteøvelse for å ri ut trangen
 - Egen liste med alternativer til scrolling
 - Logging av triggere som kjedsomhet, stress og utsettelse
 - Blokkering av valgte apper i faste perioder
+- Tidsavbrudd: etter 2 minutter totalt sperres alle valgte apper, og de åpnes igjen etter 10 (begge tallene kan endres, og funksjonen kan slås av)
 - Oversikt over når på døgnet du scroller
 - Denne uka sammenlignet med forrige uke, med grafer
 - Ditt eget «hvorfor» som vises når du trenger det

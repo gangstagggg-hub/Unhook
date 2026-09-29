@@ -99,6 +99,10 @@ class Bridge(private val activity: Activity) {
         return arr.toString()
     }
 
+    /** Tid brukt i dag i de valgte appene (millisekunder). */
+    @JavascriptInterface
+    fun dailyUsedMs(): Long = Store.dailyUsed(activity)
+
     @JavascriptInterface
     fun currentSession(): String = Store.current ?: "null"
 }
