@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Unhook</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2C5A88">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Unhook">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Unbounded:wght@900&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E6EBEE;--surface:#F7F9FA;--ink:#15212A;--muted:#5A6A75;--line:#D2DAE0;
+  --accent:#2C5A88;--accent-ink:#FFFFFF;--accent-soft:#DCE6F0;--sun:#C98A1E;--danger:#B4483C;
+  --display:"Bricolage Grotesque",ui-rounded,"Segoe UI",system-ui,sans-serif;
+  --body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E141A;--surface:#161F28;--ink:#E3E9EE;--muted:#8B9AA6;--line:#24303B;
+    --accent:#86ADD8;--accent-ink:#0E141A;--accent-soft:#1C2A38;--sun:#E6AE4C;--danger:#E07A6C;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E141A;--surface:#161F28;--ink:#E3E9EE;--muted:#8B9AA6;--line:#24303B;
+  --accent:#86ADD8;--accent-ink:#0E141A;--accent-soft:#1C2A38;--sun:#E6AE4C;--danger:#E07A6C;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{max-width:480px;margin:0 auto;padding:12px 18px 110px}
+header{display:flex;align-items:center;justify-content:space-between;padding:10px 0 18px}
+.logo-wrap{position:relative;display:inline-block;padding:11px 18px 10px}
+.logo{font-family:"Unbounded","Arial Black",Impact,sans-serif;font-weight:900;font-size:26px;text-transform:uppercase;letter-spacing:.05em;line-height:1;margin:0}
+.logo-ring{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+.logo-ring rect{fill:none;stroke-width:2}
+.logo-ring .runner{stroke:var(--accent);stroke-linecap:round;stroke-dasharray:14 86;animation:orbit 2.6s linear infinite}
+@keyframes orbit{to{stroke-dashoffset:-100}}
+@media (prefers-reduced-motion:reduce){.logo-ring .runner{animation:none}}
+.icon-btn{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center}
+.icon-btn svg{width:20px;height:20px}
+h2{font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:-.01em;margin:30px 0 10px}
+h3{font-size:16px;font-weight:600;margin:0 0 4px}
+p{margin:0}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:12px}
+
+/* Hero */
+.hero{background:var(--accent);color:var(--accent-ink);border-radius:28px;padding:24px 22px 22px}
+.hero p{opacity:.85}
+.streak{display:flex;align-items:baseline;gap:14px;margin:6px 0 4px;flex-wrap:wrap}
+.streak span{font-family:var(--display);font-weight:800;font-size:64px;line-height:1;letter-spacing:-.04em}
+.streak small{font-family:var(--display);font-weight:500;font-size:20px;margin-left:3px;opacity:.8}
+
+.why{border-left:3px solid var(--sun);padding:4px 0 4px 14px;margin:20px 2px;font-family:var(--display);font-weight:500;font-size:19px;line-height:1.35}
+.why.empty{font-family:var(--body);font-size:15px;color:var(--muted);font-weight:400}
+
+.btn{border:0;border-radius:999px;padding:13px 20px;font-weight:600;background:var(--ink);color:var(--bg)}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn.danger{background:transparent;border:1px solid var(--danger);color:var(--danger)}
+.btn.block{width:100%}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row .btn{flex:1}
+
+.timer{font-family:var(--display);font-weight:800;font-size:52px;letter-spacing:-.03em;line-height:1.1;font-variant-numeric:tabular-nums}
+.bar{height:8px;border-radius:8px;background:var(--accent-soft);overflow:hidden;margin:12px 0 16px}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:8px;transition:width .6s}
+.bar.over i{background:var(--sun)}
+
+.banner{display:flex;gap:12px;align-items:flex-start;background:var(--accent-soft);border-radius:14px;padding:12px 14px;margin-bottom:12px;font-size:14px}
+.banner b{font-weight:600}
+
+.alts{list-style:none;padding:0;margin:0}
+.alts li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.alts li:last-child{border-bottom:0}
+.x{border:0;background:none;color:var(--muted);font-size:22px;line-height:1;padding:4px 8px}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip.sm{padding:5px 10px;font-size:13px}
+
+input[type=text],input[type=time],input[type=number],textarea{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:11px 13px}
+textarea{resize:vertical;min-height:80px}
+.add{display:flex;gap:8px;margin-top:12px}
+.add input{flex:1}
+.add .btn{padding:11px 16px}
+
+.toggle{position:relative;width:48px;height:28px;border-radius:28px;border:0;background:var(--line);flex:none;transition:background .2s}
+.toggle::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s}
+.toggle[aria-checked="true"]{background:var(--accent)}
+.toggle[aria-checked="true"]::after{transform:translateX(20px)}
+
+/* Insights */
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.num{font-family:var(--display);font-weight:800;font-size:36px;letter-spacing:-.03em;line-height:1.1}
+.num small{font-size:16px;font-weight:500;color:var(--muted);margin-left:2px}
+.saved{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+svg.chart{width:100%;height:auto;display:block}
+.tbar{display:grid;grid-template-columns:96px 1fr 30px;align-items:center;gap:10px;font-size:14px;margin:8px 0}
+.tbar div{height:10px;border-radius:6px;background:var(--accent-soft);overflow:hidden}
+.tbar div i{display:block;height:100%;background:var(--accent)}
+.list-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.list-row:last-child{border-bottom:0}
+.long{color:var(--sun);font-weight:600}
+.empty-state{text-align:center;padding:30px 18px}
+.empty-state p{margin-bottom:16px}
+
+/* Periods */
+.period{padding:14px 0;border-bottom:1px solid var(--line)}
+.period:last-child{border-bottom:0}
+.period-top{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.period-top input[type=text]{font-weight:600}
+.times{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.times input{flex:1;min-width:0}
+
+/* Widget */
+.widget{width:170px;aspect-ratio:1;border-radius:26px;background:var(--accent);color:var(--accent-ink);padding:16px;display:flex;flex-direction:column;justify-content:space-between}
+.widget .w-title{font-family:var(--display);font-weight:800;font-size:15px}
+.widget .w-num{font-family:var(--display);font-weight:800;font-size:44px;line-height:1;letter-spacing:-.03em}
+
+/* Breathing */
+.breathe{display:flex;flex-direction:column;align-items:center;text-align:center;padding:10px 0 4px}
+.circle-wrap{width:240px;height:240px;display:grid;place-items:center;margin:14px 0 20px}
+.circle{width:110px;height:110px;border-radius:50%;background:var(--accent);opacity:.9;transform:scale(1);transition-property:transform;transition-timing-function:ease-in-out}
+.phase{font-family:var(--display);font-weight:800;font-size:28px;min-height:40px}
+.guide{min-height:72px;max-width:34ch;color:var(--muted);margin:6px 0 20px}
+
+/* Nav */
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+nav .inner{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+nav button{border:0;background:none;padding:10px 0 12px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;color:var(--muted)}
+nav button svg{width:22px;height:22px}
+nav button[aria-selected="true"]{color:var(--accent);font-weight:600}
+
+/* Sheet */
+.scrim{position:fixed;inset:0;background:rgba(10,16,22,.45);display:none;z-index:10}
+.scrim.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:11;max-width:480px;margin:0 auto;background:var(--surface);border-radius:26px 26px 0 0;padding:22px 20px calc(24px + env(safe-area-inset-bottom,0px));transform:translateY(105%);transition:transform .28s ease;max-height:88vh;overflow:auto}
+.sheet.open{transform:none}
+.sheet h2{margin-top:0}
+.grab{width:40px;height:5px;border-radius:5px;background:var(--line);margin:-8px auto 14px}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20}
+.toast.show{opacity:1}
+.back{display:inline-flex;align-items:center;gap:6px;border:0;background:none;color:var(--accent);font-weight:600;padding:6px 0;margin:0}
+.back svg{width:18px;height:18px}
+/* Oppsettsveiledning */
+.onboard{position:fixed;inset:0;z-index:30;background:var(--bg);overflow:auto;padding:calc(18px + env(safe-area-inset-top,0px)) 22px calc(20px + env(safe-area-inset-bottom,0px))}
+.onboard .inner{max-width:480px;min-height:100%;margin:0 auto;display:flex;flex-direction:column}
+.ob-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+.ob-dots{display:flex;gap:6px}
+.ob-dots i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.ob-dots i.on{background:var(--accent);width:22px;border-radius:8px}
+.ob-skip{border:0;background:none;color:var(--muted);font-size:14px;padding:6px 0}
+.ob-num{font-family:var(--display);font-weight:800;font-size:15px;color:var(--accent);margin-bottom:6px}
+.ob-title{font-family:var(--display);font-weight:800;font-size:30px;line-height:1.15;letter-spacing:-.02em;margin:0 0 14px}
+.ob-body{color:var(--muted);margin-bottom:22px}
+.ob-body p+p{margin-top:10px}
+.ob-status{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:8px 14px;font-size:14px;font-weight:600;margin-bottom:16px}
+.ob-status.ok{background:var(--accent-soft);color:var(--accent)}
+.ob-status.no{background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.ob-nav{margin-top:auto;padding-top:28px;display:flex;gap:10px}
+.ob-nav .btn{flex:1}
+.switch-row{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.num-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line);margin-top:14px}
+.num-row label{flex:1;font-size:15px}
+.num-row .inp{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px}
+.num-row input{width:76px;text-align:center;font-weight:600}
+#toFields{transition:opacity .2s}
+.opt{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:16px}
+.opt[aria-checked="true"]{border-color:var(--accent);color:var(--accent)}
+.opt[aria-checked="true"] .muted{color:var(--muted)}
+.opt-check{width:20px;height:20px;flex:none}
+.hidden{display:none!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo-wrap">
+      <h1 class="logo">Unhook</h1>
+      <svg class="logo-ring" aria-hidden="true"><rect class="runner" pathLength="100"/></svg>
+    </div>
+    <button class="icon-btn" id="themeBtn" aria-label="Utseende: lys, mørk eller telefonens standard" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="19" cy="12" r="1.9"/></svg></button>
+  </header>
+
+  <!-- I DAG -->
+  <main id="tab-home" data-tab>
+    <section class="hero">
+      <p class="small">Siden sist du scrollet mer enn 5 minutter</p>
+      <div class="streak" id="streak"></div>
+      <p class="small" id="streakSub"></p>
+    </section>
+
+    <div id="why" class="why"></div>
+    <div id="blockBanner"></div>
+
+    <section class="card" id="sessionCard"></section>
+    <section class="card hidden" id="dailyCard"></section>
+
+    <div class="row" style="margin-bottom:12px">
+      <button class="btn ghost" data-open="trigger">Logg trigger</button>
+      <button class="btn ghost" data-go="breathe">Pusteøvelse</button>
+    </div>
+
+    <h2>Prøv i stedet</h2>
+    <section class="card"><ul class="alts" id="homeAlts"></ul></section>
+  </main>
+
+  <!-- PUST -->
+  <main id="tab-breathe" data-tab class="hidden">
+    <button class="back" data-go="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Tilbake til I dag</button>
+    <h2 style="margin-top:6px">Ri ut trangen</h2>
+    <p class="muted">Trangen til å scrolle stiger, topper seg og faller igjen. Denne øvelsen tar to minutter og hjelper deg å vente den ut.</p>
+    <section class="card breathe" style="margin-top:16px">
+      <div class="circle-wrap"><div class="circle" id="circle"></div></div>
+      <div class="phase" id="phase">Klar?</div>
+      <p class="guide" id="guide">Sett deg godt til rette og legg telefonen i fanget.</p>
+      <button class="btn primary" id="breatheBtn">Start øvelsen</button>
+    </section>
+  </main>
+
+  <!-- INNSIKT -->
+  <main id="tab-insights" data-tab class="hidden">
+    <button class="back" data-go="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Tilbake til I dag</button>
+    <div id="insightsBody"></div>
+  </main>
+
+  <!-- MER -->
+  <main id="tab-more" data-tab class="hidden">
+    <button class="back" data-go="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Tilbake til I dag</button>
+    <h2 style="margin-top:6px">Ditt hvorfor</h2>
+    <section class="card">
+      <p class="muted small" style="margin-bottom:10px">Dette vises når du har scrollet for lenge.</p>
+      <textarea id="whyInput" placeholder="Jeg vil kutte ned fordi …"></textarea>
+    </section>
+
+    <h2>Alternativer</h2>
+    <section class="card">
+      <p class="muted small" style="margin-bottom:6px">Varslene sier «Hva med å …» etterfulgt av et av disse. Skriv dem slik at de passer der, for eksempel «lese en bok».</p>
+      <ul class="alts" id="altList"></ul>
+      <div class="add"><input type="text" id="altInput" placeholder="F.eks. lese en bok" aria-label="Nytt alternativ" enterkeyhint="done"><button type="button" class="btn primary" id="altAdd">Legg til</button></div>
+    </section>
+
+    <div id="webOnly" class="hidden">
+      <h2>Automatisk registrering og blokkering</h2>
+      <section class="card">
+        <p class="small" style="margin-bottom:10px">Denne versjonen kjører i nettleseren, og nettlesere har ikke lov til å se eller stoppe andre apper. Derfor må du starte økter selv her.</p>
+        <p class="small muted">Automatiske økter, varsel når du åpner Instagram eller Snapchat, og blokkering i faste tider krever Android-appen.</p>
+      </section>
+    </div>
+
+    <div id="nativeOnly" class="hidden">
+      <h2>Apper</h2>
+      <section class="card">
+        <p class="muted small" style="margin-bottom:6px">Unhook registrerer tid i disse appene. Slå på bryteren for de som skal sperres i blokkeringstidene, ha tidsavbrudd og telle mot den daglige grensen.</p>
+        <div id="overlayBox"></div>
+        <ul class="alts" id="blockList"></ul>
+        <button type="button" class="btn primary block" id="pickApp" style="margin-top:12px">Legg til app</button>
+      </section>
+
+      <h2>Tidsavbrudd</h2>
+      <section class="card">
+        <div class="switch-row">
+          <div><h3>Sperr etter bruk</h3><p class="muted small" id="toSummary"></p></div>
+          <button class="toggle" role="switch" id="toOn" aria-label="Tidsavbrudd på eller av" aria-checked="false"></button>
+        </div>
+        <div id="toFields">
+          <div class="num-row"><label for="toLimit">Sperr alle appene etter</label><span class="inp"><input type="number" id="toLimit" inputmode="numeric" min="1" max="240">min</span></div>
+          <div class="num-row" style="margin-top:0"><label for="toReset">Åpne igjen og nullstill etter</label><span class="inp"><input type="number" id="toReset" inputmode="numeric" min="1" max="240">min</span></div>
+        </div>
+      </section>
+
+      <h2>Daglig grense</h2>
+      <section class="card">
+        <div class="switch-row">
+          <div><h3>Maks tid per dag</h3><p class="muted small" id="dySummary"></p></div>
+          <button class="toggle" role="switch" id="dyOn" aria-label="Daglig grense på eller av" aria-checked="false"></button>
+        </div>
+        <div id="dyFields">
+          <div class="num-row"><label for="dyMin">Maks tid i appene per dag</label><span class="inp"><input type="number" id="dyMin" inputmode="numeric" min="1" max="1440">min</span></div>
+        </div>
+      </section>
+
+      <h2>Blokkeringstider</h2>
+      <section class="card">
+        <p class="muted small" style="margin-bottom:6px">I disse tidene lukkes appene som er slått på over, og du sendes til hjemskjermen.</p>
+        <div id="periodList"></div>
+        <button class="btn ghost block" id="addPeriod" style="margin-top:12px">Legg til tidsrom</button>
+      </section>
+    </div>
+
+    <h2>Varsler</h2>
+    <section class="card">
+      <p class="small muted" id="notifStatus" style="margin-bottom:12px"></p>
+      <button class="btn primary block" id="notifBtn">Slå på varsler</button>
+      <button class="btn ghost block hidden" id="notifSettingsBtn">Åpne varselinnstillinger</button>
+    </section>
+
+    <h2>Widget</h2>
+    <section class="card" style="display:flex;gap:16px;align-items:center">
+      <div class="widget" aria-label="Forhåndsvisning av widget">
+        <div class="w-title">Unhook</div>
+        <div><div class="w-num" id="wStreak">0</div><div class="small" id="wUnit">dager</div></div>
+        <div class="small" id="wToday">0 min i dag</div>
+      </div>
+      <p class="small muted">Slik ser widgeten ut på hjemskjermen i mobilappen.</p>
+    </section>
+
+    <div id="installBox" class="hidden">
+      <h2>Installer appen</h2>
+      <section class="card">
+        <p class="small muted" id="installText" style="margin-bottom:12px">Legg Unhook på hjemskjermen, så åpnes den som en vanlig app.</p>
+        <button class="btn primary block" id="installBtn">Installer Unhook</button>
+      </section>
+    </div>
+
+    <div id="setupBox" class="hidden">
+      <h2>Oppsett</h2>
+      <section class="card">
+        <p class="small muted" style="margin-bottom:12px">Gå gjennom tillatelsene på nytt hvis noe ikke virker som det skal.</p>
+        <button class="btn ghost block" id="setupBtn">Vis oppsettsveiledningen</button>
+      </section>
+    </div>
+
+    <h2>Personvern</h2>
+    <section class="card">
+      <p class="small" style="margin-bottom:14px">Alt du registrerer lagres bare på denne enheten. Ingenting sendes til en server.</p>
+      <button class="btn danger block" id="wipeBtn">Slett alle data</button>
+    </section>
+  </main>
+</div>
+
+<nav><div class="inner" role="tablist">
+  <button role="tab" data-go="home" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-7 8 7v9H4z"/></svg>I dag</button>
+  <button role="tab" data-go="breathe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/></svg>Pust</button>
+  <button role="tab" data-go="insights"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 20V11M12 20V5M19 20v-7"/></svg>Innsikt</button>
+  <button role="tab" data-go="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>Mer</button>
+</div></nav>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div id="sheetBody"></div></div>
+<div class="toast" id="toast"></div>
+<div class="onboard hidden" id="onboard" role="dialog" aria-modal="true" aria-label="Oppsett"><div class="inner" id="obInner"></div></div>
+
+<script>
+const KEY = "unhook-v1";
+// Satt av Android-appen (WebView). Er null i nettleseren.
+const NATIVE = window.Android || null;
+const callNative = (fn, ...a) => { try { return NATIVE && NATIVE[fn] ? NATIVE[fn](...a) : null; } catch { return null; } };
+const LIMIT = 5 * 60 * 1000;
+const DAYS = [[1,"Ma"],[2,"Ti"],[3,"On"],[4,"To"],[5,"Fr"],[6,"Lø"],[0,"Sø"]];
+const TRIGGERS = ["Kjedsomhet","Stress","Ensomhet","Utsettelse","Trøtthet","Vane","Annet"];
+const defaults = () => ({
+  why: "",
+  alternatives: ["Gå en tur rundt kvartalet","Lese ti sider i en bok","Sende en melding til en venn","Strekke ut i fem minutter","Drikke et glass vann","Skrive ned hva du tenker på"],
+  blocked: [{name:"Instagram",on:true},{name:"TikTok",on:true},{name:"Facebook",on:false},{name:"Snapchat",on:false},{name:"YouTube",on:false},{name:"Nettleser",on:false}],
+  periods: [{id:1,name:"Kveld",from:"22:00",to:"07:00",days:[1,2,3,4,5,6,0]}],
+  sessions: [], triggers: [], lastLong: null, installedAt: Date.now(), active: null, theme: null,
+  timeout: { on: false, limit: 2, reset: 10 },
+  daily: { on: false, min: 60 }
+});
+
+let S;
+try { S = Object.assign(defaults(), JSON.parse(localStorage.getItem(KEY)) || {}); } catch { S = defaults(); }
+S.timeout = Object.assign({ on: false, limit: 2, reset: 10 }, S.timeout || {});
+S.daily = Object.assign({ on: false, min: 60 }, S.daily || {});
+// Gjør gamle standardalternativer om til infinitiv, så de passer etter «Hva med å …».
+{ const from = ["Gå en tur rundt kvartalet","Les ti sider i en bok","Send en melding til en venn","Strekk ut i fem minutter","Drikk et glass vann","Skriv ned hva du tenker på"], to = ["Gå en tur rundt kvartalet","Lese ti sider i en bok","Sende en melding til en venn","Strekke ut i fem minutter","Drikke et glass vann","Skrive ned hva du tenker på"];
+  S.alternatives = S.alternatives.map(a => from.includes(a) ? to[from.indexOf(a)] : a); }
+const save = () => {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {}
+  callNative("syncSettings", JSON.stringify({ why: S.why, alternatives: S.alternatives, blocked: S.blocked, periods: S.periods, timeout: S.timeout, daily: S.daily }));
+};
+save();
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pick = (arr, n) => [...arr].sort(() => Math.random() - .5).slice(0, n);
+// «Gå en tur» blir «Hva med å gå en tur?». Velger ikke samme alternativ to ganger på rad.
+let lastAlt = null;
+function suggestion(){
+  const pool = S.alternatives.length > 1 ? S.alternatives.filter(a => a !== lastAlt) : S.alternatives;
+  const alt = pool.length ? pool[Math.floor(Math.random() * pool.length)] : "Legge bort telefonen en stund";
+  lastAlt = alt;
+  let t = alt.trim().replace(/[.!?]+$/, "");
+  if (!(t.length > 1 && t[1] === t[1].toUpperCase() && t[1] !== t[1].toLowerCase())) t = t.charAt(0).toLowerCase() + t.slice(1);
+  return `Hva med å ${t}?`;
+}
+const MAX_STEPS = 3; // varsler ved 5, 10 og 15 minutter
+const toast = msg => { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 2200); };
+
+/* ---------- Theme ---------- */
+function applyTheme(){
+  // Uten data-theme følger siden telefonens innstilling (prefers-color-scheme).
+  if (S.theme) document.documentElement.setAttribute("data-theme", S.theme);
+  else document.documentElement.removeAttribute("data-theme");
+}
+const THEMES = [
+  { value: null,    label: "Telefonens standard", hint: "Følger lys eller mørk innstilling på telefonen" },
+  { value: "light", label: "Lys",                 hint: "Alltid lyst utseende" },
+  { value: "dark",  label: "Mørk",                hint: "Alltid mørkt utseende" }
+];
+const check = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:20px;height:20px"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+$("#themeBtn").onclick = () => {
+  const cur = S.theme || null;
+  openSheet(`<h2>Utseende</h2>
+    <div role="radiogroup" aria-label="Utseende" style="display:grid;gap:10px">
+      ${THEMES.map((t, i) => `<button class="opt" role="radio" aria-checked="${t.value === cur}" data-theme-i="${i}">
+        <span><b>${t.label}</b><span class="muted small" style="display:block">${t.hint}</span></span>
+        <span class="opt-check">${t.value === cur ? check : ""}</span></button>`).join("")}
+    </div>`);
+  $("#sheetBody [role=radiogroup]").onclick = e => {
+    const b = e.target.closest("[data-theme-i]"); if (!b) return;
+    S.theme = THEMES[+b.dataset.themeI].value;
+    save(); applyTheme(); closeSheet();
+  };
+};
+applyTheme();
+
+/* ---------- Tabs ---------- */
+let currentTab = "home";
+function render(tab){
+  if (tab === "insights") renderInsights();
+  if (tab === "more") renderMore();
+  if (tab === "home") renderHome();
+}
+function go(tab){
+  currentTab = tab;
+  document.querySelectorAll("[data-tab]").forEach(m => m.classList.toggle("hidden", m.id !== "tab-" + tab));
+  document.querySelectorAll("nav [data-go]").forEach(b => b.setAttribute("aria-selected", b.dataset.go === tab));
+  render(tab);
+  scrollTo(0, 0);
+}
+// Tilbake-knappen på Android: lukk ark, ellers gå til I dag. Returnerer false når appen kan lukkes.
+window.unhookBack = () => {
+  if (obOpen) { if (obStep > 0) { obStep--; renderOnboard(); } return true; }
+  if ($("#sheet").classList.contains("open")) { closeSheet(); return true; }
+  if (currentTab !== "home") { go("home"); return true; }
+  return false;
+};
+window.unhookResume = () => { pullNative(); render(currentTab); if (obOpen) renderOnboard(); };
+document.addEventListener("click", e => {
+  const g = e.target.closest("[data-go]"); if (g) { e.preventDefault(); closeSheet(); go(g.dataset.go); }
+  const o = e.target.closest("[data-open]"); if (o && o.dataset.open === "trigger") openTrigger();
+});
+
+/* ---------- Helpers for time ---------- */
+const toMin = hm => { const [h, m] = hm.split(":").map(Number); return h * 60 + m; };
+function activePeriods(d = new Date()){
+  const now = d.getHours() * 60 + d.getMinutes();
+  return S.periods.filter(p => {
+    if (!p.days.includes(d.getDay())) return false;
+    const f = toMin(p.from), t = toMin(p.to);
+    return f < t ? now >= f && now < t : now >= f || now < t;
+  });
+}
+const dayStart = d => { const x = new Date(d); x.setHours(0,0,0,0); return x.getTime(); };
+function weekStart(d = new Date()){ const x = new Date(dayStart(d)); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x.getTime(); }
+const todayMinutes = () => S.sessions.filter(s => s.start >= dayStart(Date.now())).reduce((a, s) => a + s.min, 0);
+
+function streakParts(){
+  const since = S.lastLong || S.installedAt;
+  const ms = Math.max(0, Date.now() - since);
+  return { d: Math.floor(ms / 864e5), h: Math.floor(ms / 36e5) % 24, m: Math.floor(ms / 6e4) % 60 };
+}
+
+/* ---------- Home ---------- */
+function renderStreak(){
+  const {d, h, m} = streakParts();
+  const parts = d > 0 ? [[d,"d"],[h,"t"]] : h > 0 ? [[h,"t"],[m,"m"]] : [[m,"m"]];
+  $("#streak").innerHTML = parts.map(([n, u]) => `<span>${n}<small>${u}</small></span>`).join("");
+  $("#streakSub").textContent = S.lastLong
+    ? "Tida nullstilles når en økt går over 5 minutter."
+    : "Tida startet da du tok i bruk appen.";
+  $("#wStreak").textContent = d > 0 ? d : h > 0 ? h : m;
+  $("#wUnit").textContent = d > 0 ? (d === 1 ? "dag" : "dager") : h > 0 ? "timer" : "minutter";
+  $("#wToday").textContent = Math.round(todayMinutes()) + " min i dag";
+}
+
+function renderNativeSession(c){
+  if (!callNative("hasUsageAccess")){
+    c.innerHTML = `<h3>Gi Unhook tilgang til bruksdata</h3>
+      <p class="muted small" style="margin:4px 0 16px">Da kan appen se når du åpner sosiale medier eller nettleseren, og varsle deg etter 5 minutter. Finn Unhook i listen og slå på tilgang.</p>
+      <button class="btn primary block" id="accessBtn">Åpne innstillinger</button>`;
+    $("#accessBtn").onclick = () => callNative("openUsageAccessSettings");
+    return;
+  }
+  let cur = null; try { cur = JSON.parse(callNative("currentSession") || "null"); } catch {}
+  if (!cur){
+    c.innerHTML = `<h3>Unhook følger med</h3>
+      <p class="muted small" style="margin-top:4px">Når du åpner en sosial app eller nettleseren, starter en økt automatisk. Du får varsel etter 5 minutter.</p>`;
+    return;
+  }
+  const el = Date.now() - cur.start, over = el >= LIMIT;
+  const mm = String(Math.floor(el / 6e4)).padStart(2, "0"), ss = String(Math.floor(el / 1e3) % 60).padStart(2, "0");
+  c.innerHTML = `<h3>${esc(cur.app)} ${over ? "over grensen" : "er åpen"}</h3>
+    <div class="timer">${mm}:${ss}</div>
+    <div class="bar ${over ? "over" : ""}"><i style="width:${Math.min(100, el / LIMIT * 100)}%"></i></div>`;
+}
+
+function renderSession(){
+  const c = $("#sessionCard");
+  if (NATIVE) { renderNativeSession(c); return; }
+  if (!S.active){
+    c.innerHTML = `<h3>Ingen økt i gang</h3>
+      <p class="muted small" style="margin:4px 0 16px">Start en økt når du åpner en sosial app eller nettleseren. Du får varsel etter 5 minutter. I mobilappen skjer dette automatisk.</p>
+      <button class="btn primary block" id="startBtn">Start scrolle-økt</button>`;
+    $("#startBtn").onclick = startSession;
+    return;
+  }
+  const el = Date.now() - S.active.start;
+  const mm = String(Math.floor(el / 6e4)).padStart(2, "0"), ss = String(Math.floor(el / 1e3) % 60).padStart(2, "0");
+  const over = el >= LIMIT;
+  c.innerHTML = `<h3>${over ? "Du er over grensen" : "Økt pågår"}</h3>
+    <div class="timer">${mm}:${ss}</div>
+    <div class="bar ${over ? "over" : ""}"><i style="width:${Math.min(100, el / LIMIT * 100)}%"></i></div>
+    <div class="row"><button class="btn primary" id="endBtn">Avslutt økt</button><button class="btn ghost" id="skipBtn" title="For å teste varselet">Hopp til 5 min</button></div>`;
+  $("#endBtn").onclick = endSession;
+  $("#skipBtn").onclick = () => { S.active.start = Math.min(S.active.start, Date.now() - LIMIT + 1500); save(); renderSession(); };
+}
+
+function renderHome(){
+  renderStreak();
+  const w = $("#why");
+  if (S.why.trim()){ w.className = "why"; w.textContent = S.why; }
+  else { w.className = "why empty"; w.innerHTML = 'Skriv ned hvorfor du vil kutte ned. <a href="#" data-go="more" style="color:var(--accent)">Legg til ditt hvorfor</a>'; }
+  const ap = activePeriods(), apps = S.blocked.filter(b => b.on).map(b => b.name);
+  $("#blockBanner").innerHTML = NATIVE && ap.length && apps.length
+    ? `<div class="banner"><span>🔒</span><p><b>Blokkering er på.</b> ${esc(apps.join(", "))} er sperret til ${esc(ap[0].to)}.</p></div>` : "";
+  renderSession();
+  renderDailyCard();
+  $("#homeAlts").innerHTML = pick(S.alternatives, 3).map(a => `<li>${esc(a)}</li>`).join("") || `<li class="muted">Legg til alternativer under Mer.</li>`;
+}
+
+/* ---------- Sessions & notifications ---------- */
+function startSession(){
+  if ("Notification" in window && Notification.permission === "default") { try { Notification.requestPermission().then(renderNotif); } catch {} }
+  S.active = { start: Date.now(), notified: 0 }; save(); renderSession();
+  const why = S.why.trim() || "Husk hvorfor du vil kutte ned. Skriv ditt hvorfor under Mer.";
+  const sug = suggestion();
+  try { if ("Notification" in window && Notification.permission === "granted") new Notification(sug, { body: why }); } catch {}
+  openSheet(`<h2>${esc(sug)}</h2>
+    <div class="why" style="margin:0 0 20px">${esc(why)}</div>
+    ${activePeriods().length ? '<p class="small muted" style="margin-bottom:16px">Du er i en blokkeringsperiode nå.</p>' : ""}
+    <div style="display:grid;gap:10px">
+      <button class="btn primary block" id="rEnd">Avbryt økten</button>
+      <button class="btn ghost block" id="rGo">Fortsett</button>
+    </div>`);
+  $("#rEnd").onclick = () => { S.active = null; save(); closeSheet(); renderSession(); toast("Bra valg"); };
+  $("#rGo").onclick = closeSheet;
+}
+function endSession(){
+  const a = S.active; if (!a) return;
+  const min = Math.round((Date.now() - a.start) / 6e3) / 10;
+  S.sessions.push({ start: a.start, end: Date.now(), min });
+  S.active = null; save(); renderHome();
+  toast(`Økt avsluttet: ${Math.round(min)} min`);
+  if (min >= 1) setTimeout(() => openTrigger("Hva fikk deg til å scrolle?"), 400);
+}
+// Henter økter som Android-tjenesten har registrert i bakgrunnen.
+function pullNative(){
+  if (!NATIVE) return;
+  let list = []; try { list = JSON.parse(callNative("takeSessions") || "[]"); } catch {}
+  list.forEach(x => {
+    const min = Math.round((x.end - x.start) / 6e3) / 10;
+    S.sessions.push({ start: x.start, end: x.end, min, app: x.app });
+    if (min >= 5) S.lastLong = Math.max(S.lastLong || 0, x.start + LIMIT);
+  });
+  let cur = null; try { cur = JSON.parse(callNative("currentSession") || "null"); } catch {}
+  if (cur && Date.now() - cur.start >= LIMIT) S.lastLong = Math.max(S.lastLong || 0, cur.start + LIMIT);
+  if (list.length || cur) save();
+}
+let nativeTicks = 0;
+function tick(){
+  if (NATIVE){
+    if (nativeTicks++ % 5 === 0) pullNative();
+    renderStreak();
+    if (currentTab === "home") { renderSession(); renderDailyCard(); }
+    return;
+  }
+  renderStreak();
+  if (!S.active) return;
+  const el = Date.now() - S.active.start, n = Math.floor(el / LIMIT);
+  if (n > S.active.notified && n <= MAX_STEPS){
+    S.active.notified = n;
+    if (n === 1) S.lastLong = S.active.start + LIMIT;
+    save(); notify(n * 5);
+  }
+  if (currentTab === "home") renderSession();
+}
+function notify(mins){
+  const sug = suggestion();
+  try { if ("Notification" in window && Notification.permission === "granted") new Notification(sug, { body: `Du har scrollet i ${mins} minutter.` }); } catch {}
+  if (navigator.vibrate) navigator.vibrate([120, 60, 120]);
+  openSheet(`<p class="muted small" style="margin-bottom:6px">Du har scrollet i ${mins} minutter.</p>
+    <h2>${esc(sug)}</h2>
+    ${S.why.trim() ? `<div class="why" style="margin:0 0 20px">${esc(S.why)}</div>` : ""}
+    <div style="display:grid;gap:10px">
+      <button class="btn primary block" id="nEnd">Avslutt økt</button>
+      <button class="btn ghost block" data-go="breathe">Start pusteøvelse</button>
+      <button class="btn ghost block" id="nLater">Fortsett litt til</button>
+    </div>`);
+  $("#nEnd").onclick = () => { closeSheet(); endSession(); };
+  $("#nLater").onclick = closeSheet;
+}
+
+/* ---------- Sheet ---------- */
+function openSheet(html){ $("#sheetBody").innerHTML = html; $("#scrim").classList.add("open"); $("#sheet").classList.add("open"); }
+function closeSheet(){ $("#scrim").classList.remove("open"); $("#sheet").classList.remove("open"); }
+$("#scrim").onclick = closeSheet;
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheet(); });
+
+function openTrigger(title = "Logg en trigger"){
+  let chosen = null;
+  openSheet(`<h2>${esc(title)}</h2>
+    <div class="chips" id="tChips">${TRIGGERS.map(t => `<button class="chip" aria-pressed="false" data-t="${t}">${t}</button>`).join("")}</div>
+    <textarea id="tNote" placeholder="Notat (valgfritt)" style="margin:16px 0"></textarea>
+    <button class="btn primary block" id="tSave">Lagre trigger</button>`);
+  $("#tChips").onclick = e => {
+    const b = e.target.closest("[data-t]"); if (!b) return;
+    chosen = b.dataset.t;
+    document.querySelectorAll("#tChips .chip").forEach(c => c.setAttribute("aria-pressed", c === b));
+  };
+  $("#tSave").onclick = () => {
+    if (!chosen) { toast("Velg hva som trigget deg"); return; }
+    S.triggers.push({ t: Date.now(), type: chosen, note: $("#tNote").value.trim() });
+    save(); closeSheet(); toast("Trigger lagret");
+  };
+}
+
+/* ---------- Breathing exercise ---------- */
+const GUIDE = [
+  "Legg merke til trangen. Du trenger ikke gjøre noe med den.",
+  "Hvor i kroppen kjenner du den? Brystet, hendene, magen?",
+  "Se på trangen som en bølge. Den stiger nå.",
+  "Du kan kjenne på den uten å følge den.",
+  "Bølgen topper seg. Bare pust.",
+  "Kjenn at den begynner å avta, litt etter litt.",
+  "Legg merke til hva du egentlig trenger akkurat nå.",
+  "Bølgen har lagt seg. Velg hva du vil gjøre videre."
+];
+const PHASES = [["Pust inn", 4, 1.9], ["Hold", 4, 1.9], ["Pust ut", 6, 1]];
+let bTimer = null;
+function stopBreathe(done){
+  clearTimeout(bTimer); bTimer = null;
+  const c = $("#circle"); c.style.transitionDuration = "1s"; c.style.transform = "scale(1)";
+  $("#phase").textContent = done ? "Godt jobbet" : "Klar?";
+  $("#guide").textContent = done ? "Trangen gikk over av seg selv. Hva vil du gjøre nå?" : "Sett deg godt til rette og legg telefonen i fanget.";
+  $("#breatheBtn").textContent = done ? "Gjør den igjen" : "Start øvelsen";
+}
+$("#breatheBtn").onclick = () => {
+  if (bTimer) { stopBreathe(false); return; }
+  $("#breatheBtn").textContent = "Stopp";
+  let cycle = 0, p = 0;
+  const step = () => {
+    if (cycle >= GUIDE.length) { stopBreathe(true); return; }
+    const [label, secs, scale] = PHASES[p];
+    if (p === 0) $("#guide").textContent = GUIDE[cycle];
+    $("#phase").textContent = label;
+    const c = $("#circle"); c.style.transitionDuration = secs + "s"; c.style.transform = `scale(${scale})`;
+    bTimer = setTimeout(() => { p++; if (p === PHASES.length) { p = 0; cycle++; } step(); }, secs * 1000);
+  };
+  step();
+};
+
+/* ---------- Insights ---------- */
+function perDay(from){
+  const arr = Array(7).fill(0);
+  S.sessions.forEach(s => { const i = Math.floor((dayStart(s.start) - from) / 864e5); if (i >= 0 && i < 7) arr[i] += s.min; });
+  return arr;
+}
+function renderInsights(){
+  const el = $("#insightsBody");
+  if (!S.sessions.length){
+    el.innerHTML = `<section class="card empty-state" style="margin-top:12px">
+      <h3>Ingen økter ennå</h3>
+      <p class="muted small">Når du har registrert noen økter, ser du her når du scroller og hvordan uka går sammenlignet med forrige.</p>
+      <button class="btn primary" id="demoBtn">Vis med eksempeldata</button></section>`;
+    $("#demoBtn").onclick = () => { seedDemo(); renderInsights(); };
+    return;
+  }
+  const ws = weekStart(), thisW = perDay(ws), lastW = perDay(ws - 7 * 864e5);
+  const idx = (new Date().getDay() + 6) % 7;
+  const sum = a => a.slice(0, idx + 1).reduce((x, y) => x + y, 0);
+  const tNow = Math.round(sum(thisW)), tLast = Math.round(sum(lastW)), diff = tLast - tNow;
+  const fmt = m => m >= 60 ? `${Math.floor(m / 60)} t ${m % 60}` : `${m}`;
+  const savedTxt = diff > 0 ? `Du har spart <b>${fmt(diff)} min</b> sammenlignet med forrige uke.`
+    : diff < 0 ? `Du har brukt <b>${fmt(-diff)} min</b> mer enn forrige uke så langt.`
+    : "Du ligger likt med forrige uke så langt.";
+
+  // Week chart
+  const W = 320, H = 150, max = Math.max(10, ...thisW, ...lastW), bw = 13, gap = W / 7;
+  let bars = "";
+  DAYS.forEach(([, lbl], i) => {
+    const x = i * gap + gap / 2, hL = lastW[i] / max * (H - 30), hT = thisW[i] / max * (H - 30);
+    bars += `<rect x="${x - bw - 1}" y="${H - 22 - hL}" width="${bw}" height="${hL}" rx="3" fill="var(--line)"/>`;
+    if (i <= idx) bars += `<rect x="${x + 1}" y="${H - 22 - hT}" width="${bw}" height="${hT}" rx="3" fill="var(--accent)"/>`;
+    bars += `<text x="${x}" y="${H - 4}" text-anchor="middle" font-size="11" fill="var(--muted)" ${i === idx ? 'font-weight="600"' : ""}>${lbl}</text>`;
+  });
+
+  // Hour chart (last 14 days)
+  const hours = Array(24).fill(0), since = Date.now() - 14 * 864e5;
+  S.sessions.filter(s => s.start >= since).forEach(s => hours[new Date(s.start).getHours()] += s.min);
+  const hMax = Math.max(1, ...hours), hw = W / 24;
+  let hbars = hours.map((v, h) => {
+    const hh = v / hMax * 80;
+    return `<rect x="${h * hw + 1.5}" y="${92 - hh}" width="${hw - 3}" height="${Math.max(2, hh)}" rx="2" fill="var(--accent)" opacity="${0.25 + 0.75 * v / hMax}"/>`;
+  }).join("");
+  hbars += [0, 6, 12, 18].map(h => `<text x="${h * hw + 2}" y="110" font-size="11" fill="var(--muted)">${String(h).padStart(2, "0")}</text>`).join("");
+  const peak = hours.indexOf(Math.max(...hours));
+
+  // Triggers
+  const tc = {}; S.triggers.filter(t => t.t >= Date.now() - 30 * 864e5).forEach(t => tc[t.type] = (tc[t.type] || 0) + 1);
+  const tMax = Math.max(1, ...Object.values(tc));
+  const tRows = Object.entries(tc).sort((a, b) => b[1] - a[1]).map(([k, v]) =>
+    `<div class="tbar"><span>${esc(k)}</span><div><i style="width:${v / tMax * 100}%"></i></div><span class="muted">${v}</span></div>`).join("");
+
+  const recent = [...S.sessions].sort((a, b) => b.start - a.start).slice(0, 6).map(s => {
+    const d = new Date(s.start);
+    return `<div class="list-row"><span>${d.toLocaleDateString("nb-NO", { weekday: "short", day: "numeric", month: "short" })} kl. ${d.toLocaleTimeString("nb-NO", { hour: "2-digit", minute: "2-digit" })}</span><span class="${s.min >= 5 ? "long" : ""}">${Math.round(s.min)} min</span></div>`;
+  }).join("");
+
+  el.innerHTML = `
+    <h2 style="margin-top:10px">Denne uka</h2>
+    <section class="card">
+      <div class="compare">
+        <div><p class="small muted">Denne uka</p><div class="num">${fmt(tNow)}<small>min</small></div></div>
+        <div><p class="small muted">Forrige uke, samme dager</p><div class="num">${fmt(tLast)}<small>min</small></div></div>
+      </div>
+      <p class="saved">${savedTxt}</p>
+    </section>
+    <section class="card">
+      <h3>Minutter per dag</h3>
+      <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Minutter per dag, denne og forrige uke">${bars}</svg>
+      <div class="legend"><span><i style="background:var(--accent)"></i>Denne uka</span><span><i style="background:var(--line)"></i>Forrige uke</span></div>
+    </section>
+    <h2>Når du scroller</h2>
+    <section class="card">
+      <p class="small muted" style="margin-bottom:10px">Siste 14 dager. Mest rundt kl. ${String(peak).padStart(2, "0")}.</p>
+      <svg class="chart" viewBox="0 0 ${W} 114" role="img" aria-label="Scrolling fordelt på klokkeslett">${hbars}</svg>
+    </section>
+    <h2>Triggere</h2>
+    <section class="card">${tRows || '<p class="muted small">Ingen triggere logget siste 30 dager.</p>'}</section>
+    <h2>Siste økter</h2>
+    <section class="card">${recent}</section>`;
+}
+
+function seedDemo(){
+  const now = Date.now(), peaks = [7, 12, 16, 21, 22, 23];
+  for (let d = 13; d >= 1; d--){
+    const base = dayStart(now - d * 864e5), n = 2 + Math.floor(Math.random() * 4);
+    for (let i = 0; i < n; i++){
+      const h = peaks[Math.floor(Math.random() * peaks.length)];
+      const start = base + h * 36e5 + Math.floor(Math.random() * 50) * 6e4;
+      const min = Math.round((2 + Math.random() * (d > 6 ? 16 : 10)) * 10) / 10;
+      S.sessions.push({ start, end: start + min * 6e4, min });
+      if (min >= 5 && (!S.lastLong || start + LIMIT > S.lastLong)) S.lastLong = start + LIMIT;
+      if (Math.random() < .5) S.triggers.push({ t: start, type: pick(TRIGGERS.slice(0, 6), 1)[0], note: "" });
+    }
+  }
+  S.installedAt = Math.min(S.installedAt, now - 14 * 864e5);
+  save(); toast("Eksempeldata lagt inn");
+}
+
+/* ---------- Settings ---------- */
+function renderMore(){
+  $("#whyInput").value = S.why;
+  $("#altList").innerHTML = S.alternatives.map((a, i) => `<li><span>${esc(a)}</span><button class="x" aria-label="Fjern ${esc(a)}" data-alt="${i}">×</button></li>`).join("");
+  $("#webOnly").classList.toggle("hidden", !!NATIVE);
+  $("#nativeOnly").classList.toggle("hidden", !NATIVE);
+  $("#blockList").innerHTML = S.blocked.map((b, i) => `<li><span>${esc(b.name)}</span><span style="display:flex;align-items:center;gap:4px">
+    <button class="toggle" role="switch" aria-checked="${b.on}" aria-label="Blokker ${esc(b.name)}" data-block="${i}"></button>
+    <button class="x" aria-label="Fjern ${esc(b.name)}" data-unblock="${i}">×</button></span></li>`).join("");
+  $("#periodList").innerHTML = S.periods.map((p, i) => `<div class="period">
+    <div class="times"><input type="time" value="${p.from}" data-pfrom="${i}" aria-label="Fra"><span class="muted">til</span><input type="time" value="${p.to}" data-pto="${i}" aria-label="Til"><button class="x" aria-label="Fjern tidsrom" data-pdel="${i}">×</button></div>
+    <div class="chips">${DAYS.map(([d, l]) => `<button class="chip sm" aria-pressed="${p.days.includes(d)}" data-pday="${i}:${d}">${l}</button>`).join("")}</div>
+  </div>`).join("") || '<p class="muted small">Ingen blokkeringstider.</p>';
+  $("#overlayBox").innerHTML = NATIVE && !callNative("canDrawOverlays")
+    ? `<div class="banner" style="margin:10px 0 4px;flex-direction:column"><p>For å blokkere apper må Unhook få lov til å vises over andre apper.</p><button class="btn primary" id="overlayBtn">Gi tillatelse</button></div>` : "";
+  const ob = $("#overlayBtn"); if (ob) ob.onclick = () => callNative("openOverlaySettings");
+  renderTimeout(); renderDaily(); renderNotif(); renderStreak();
+}
+const minTxt = n => `${n} ${n === 1 ? "minutt" : "minutter"}`;
+function renderTimeout(){
+  const t = S.timeout;
+  $("#toOn").setAttribute("aria-checked", t.on);
+  $("#toFields").style.opacity = t.on ? 1 : .45;
+  $("#toLimit").disabled = $("#toReset").disabled = !t.on;
+  if (document.activeElement !== $("#toLimit")) $("#toLimit").value = t.limit;
+  if (document.activeElement !== $("#toReset")) $("#toReset").value = t.reset;
+  $("#toSummary").textContent = t.on
+    ? `Etter ${minTxt(t.limit)} totalt i appene over sperres alle appene på lista. Etter ${minTxt(t.reset)} er de åpne igjen, og tiden nullstilles.`
+    : "Slått av. Slå på for å sperre appene på lista når du har brukt dem for lenge.";
+}
+const validMin = v => Number.isInteger(v) && v >= 1 && v <= 240;
+function bindTimeoutInput(sel, key){
+  const el = $(sel);
+  el.oninput = () => { const v = Number(el.value); if (el.value !== "" && validMin(v)) { S.timeout[key] = v; save(); renderTimeout(); } };
+  el.onchange = () => {
+    const v = Number(el.value);
+    if (el.value === "" || !validMin(v)) { toast("Velg et helt tall mellom 1 og 240"); el.value = S.timeout[key]; }
+    else { S.timeout[key] = v; save(); }
+    renderTimeout();
+  };
+}
+$("#toOn").onclick = () => { S.timeout.on = !S.timeout.on; save(); renderTimeout(); };
+
+/* ---------- Daglig grense ---------- */
+function renderDaily(){
+  const d = S.daily;
+  $("#dyOn").setAttribute("aria-checked", d.on);
+  $("#dyFields").style.opacity = d.on ? 1 : .45;
+  $("#dyMin").disabled = !d.on;
+  if (document.activeElement !== $("#dyMin")) $("#dyMin").value = d.min;
+  $("#dySummary").textContent = d.on
+    ? `Har du brukt appene på lista i ${minTxt(d.min)} i løpet av en dag, sperres de resten av dagen. Tiden nullstilles ved midnatt.`
+    : "Slått av. Slå på for å sette en øvre grense for hele dagen.";
+}
+function renderDailyCard(){
+  const c = $("#dailyCard");
+  if (!NATIVE || !S.daily.on){ c.classList.add("hidden"); return; }
+  const used = Number(callNative("dailyUsedMs")) || 0, limit = S.daily.min * 6e4;
+  const pct = Math.min(100, used / limit * 100);
+  c.classList.remove("hidden");
+  c.innerHTML = `<h3>${used >= limit ? "Dagens grense er nådd" : "Tid i dag"}</h3>
+    <p class="muted small">${Math.floor(used / 6e4)} av ${S.daily.min} min brukt i de valgte appene</p>
+    <div class="bar ${pct >= 100 ? "over" : ""}" style="margin-bottom:0"><i style="width:${pct}%"></i></div>`;
+}
+const validDay = v => Number.isInteger(v) && v >= 1 && v <= 1440;
+{
+  const el = $("#dyMin");
+  el.oninput = () => { const v = Number(el.value); if (el.value !== "" && validDay(v)) { S.daily.min = v; save(); renderDaily(); } };
+  el.onchange = () => {
+    const v = Number(el.value);
+    if (el.value === "" || !validDay(v)) { toast("Velg et helt tall mellom 1 og 1440"); el.value = S.daily.min; }
+    else { S.daily.min = v; save(); }
+    renderDaily();
+  };
+}
+$("#dyOn").onclick = () => { S.daily.on = !S.daily.on; save(); renderDaily(); };
+bindTimeoutInput("#toLimit", "limit");
+bindTimeoutInput("#toReset", "reset");
+function renderNotif(){
+  if (NATIVE){
+    const on = callNative("notificationsEnabled");
+    $("#notifStatus").textContent = on
+      ? "Varsler er på. Du får et forslag når du åpner en av appene, og etter 5, 10 og 15 minutter. Vil du ikke ha dem, kan du skru dem av i telefonens innstillinger. Der kan du også skru av bare «Scrollevarsler» og beholde resten."
+      : "Varsler er slått av for Unhook. Appene telles og sperres fortsatt, men du får ingen forslag.";
+    $("#notifBtn").classList.add("hidden");
+    $("#notifSettingsBtn").classList.remove("hidden");
+    $("#notifSettingsBtn").textContent = on ? "Skru av varsler i innstillinger" : "Slå på varsler i innstillinger";
+    return;
+  }
+  const s = !("Notification" in window) ? "unsupported" : Notification.permission;
+  $("#notifStatus").textContent = { granted: "Varsler er på. Du får et forslag når økten starter, og etter 5, 10 og 15 minutter.", denied: "Varsler er blokkert i nettleseren. Slå dem på i nettleserinnstillingene. Du får fortsatt varsel inne i appen.", default: "Slå på varsler for å få beskjed selv om appen ikke er åpen.", unsupported: "Denne nettleseren støtter ikke varsler. Du får varsel inne i appen." }[s];
+  $("#notifBtn").classList.toggle("hidden", s !== "default");
+}
+$("#notifSettingsBtn").onclick = () => callNative("openNotificationSettings");
+$("#notifBtn").onclick = () => { try { Notification.requestPermission().then(renderNotif); } catch {} };
+$("#whyInput").oninput = e => { S.why = e.target.value; save(); };
+// Knapp + Enter, uten <form>: skjemainnsending er blokkert på enkelte publiserte sider.
+function addFrom(inputSel, addFn, msg){
+  const inp = $(inputSel), v = inp.value.trim();
+  if (!v) { inp.focus(); return; }
+  addFn(v); inp.value = ""; save(); renderMore(); toast(msg);
+}
+const addAlt = () => addFrom("#altInput", v => S.alternatives.push(v), "Alternativ lagt til");
+$("#altAdd").onclick = addAlt;
+$("#altInput").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); addAlt(); } };
+// Velg blant appene som faktisk er installert på telefonen (kun Android-appen).
+$("#pickApp").onclick = () => {
+  let apps = []; try { apps = JSON.parse(callNative("installedApps") || "[]"); } catch {}
+  const have = new Set(S.blocked.map(b => b.pkg).filter(Boolean));
+  const list = apps.filter(a => !have.has(a.pkg));
+  openSheet(`<h2>Legg til app</h2>
+    <input type="text" id="appSearch" placeholder="Søk" aria-label="Søk etter app" style="margin-bottom:8px">
+    <ul class="alts" id="appList"></ul>`);
+  const draw = q => {
+    const f = list.filter(a => a.name.toLowerCase().includes(q.toLowerCase()));
+    $("#appList").innerHTML = f.map(a => `<li><button class="chip" style="border:0;padding:4px 0;background:none;text-align:left;width:100%" data-pkg="${esc(a.pkg)}">${esc(a.name)}</button></li>`).join("")
+      || '<li class="muted small">Fant ingen apper.</li>';
+  };
+  draw("");
+  $("#appSearch").oninput = e => draw(e.target.value);
+  $("#appList").onclick = e => {
+    const b = e.target.closest("[data-pkg]"); if (!b) return;
+    const a = list.find(x => x.pkg === b.dataset.pkg);
+    S.blocked.push({ name: a.name, pkg: a.pkg, on: true });
+    save(); closeSheet(); renderMore(); toast(`${a.name} lagt til`);
+  };
+};
+$("#addPeriod").onclick = () => { S.periods.push({ id: Date.now(), from: "08:00", to: "16:00", days: [1, 2, 3, 4, 5] }); save(); renderMore(); };
+$("#tab-more").addEventListener("click", e => {
+  const t = e.target.closest("button"); if (!t) return;
+  const d = t.dataset;
+  if (d.alt) S.alternatives.splice(+d.alt, 1);
+  else if (d.block) S.blocked[+d.block].on = !S.blocked[+d.block].on;
+  else if (d.unblock) S.blocked.splice(+d.unblock, 1);
+  else if (d.pdel) S.periods.splice(+d.pdel, 1);
+  else if (d.pday){ const [i, day] = d.pday.split(":").map(Number), ds = S.periods[i].days; ds.includes(day) ? ds.splice(ds.indexOf(day), 1) : ds.push(day); }
+  else return;
+  save(); renderMore();
+});
+$("#tab-more").addEventListener("change", e => {
+  const d = e.target.dataset;
+  if (d.pfrom) S.periods[+d.pfrom].from = e.target.value || "00:00";
+  else if (d.pto) S.periods[+d.pto].to = e.target.value || "00:00";
+  else return;
+  save();
+});
+$("#wipeBtn").onclick = () => {
+  openSheet(`<h2>Slette alle data?</h2><p class="muted" style="margin-bottom:18px">Økter, triggere, alternativer og innstillinger fjernes fra denne enheten. Dette kan ikke angres.</p>
+    <div style="display:grid;gap:10px"><button class="btn danger block" id="wYes">Slett alle data</button><button class="btn ghost block" id="wNo">Avbryt</button></div>`);
+  $("#wYes").onclick = () => { const th = S.theme; S = defaults(); S.theme = th; save(); closeSheet(); renderMore(); toast("Alle data er slettet"); };
+  $("#wNo").onclick = closeSheet;
+};
+
+/* ---------- Linjen rundt logoen ---------- */
+function sizeRing(){
+  const wrap = $(".logo-wrap"), w = wrap.offsetWidth, h = wrap.offsetHeight;
+  document.querySelectorAll(".logo-ring rect").forEach(r => {
+    r.setAttribute("x", 1); r.setAttribute("y", 1);
+    r.setAttribute("width", Math.max(0, w - 2)); r.setAttribute("height", Math.max(0, h - 2));
+    r.setAttribute("rx", (h - 2) / 2);
+  });
+}
+sizeRing();
+if ("ResizeObserver" in window) new ResizeObserver(sizeRing).observe($(".logo-wrap"));
+if (document.fonts) document.fonts.ready.then(sizeRing);
+
+/* ---------- Installer som app (PWA) ---------- */
+const INSTALL_KEY = "unhook-install-asked";
+const isStandalone = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const canPWA = !NATIVE && window.isSecureContext && location.protocol.startsWith("http") && window.top === window.self;
+let installEvent = null;
+
+function iosSteps(){
+  return `<p style="margin-bottom:14px">Slik legger du Unhook på hjemskjermen:</p>
+    <ol style="margin:0 0 20px;padding-left:20px;line-height:1.9">
+      <li>Trykk på <b>Del</b>-knappen nederst i Safari</li>
+      <li>Velg <b>Legg til på Hjem-skjerm</b></li>
+      <li>Trykk <b>Legg til</b></li>
+    </ol>`;
+}
+async function doInstall(){
+  if (installEvent){
+    installEvent.prompt();
+    const { outcome } = await installEvent.userChoice;
+    installEvent = null;
+    closeSheet(); updateInstallBox();
+    if (outcome === "accepted") toast("Unhook installeres");
+  } else if (isIOS()){
+    openSheet(`<h2>Installer Unhook</h2>${iosSteps()}<button class="btn primary block" id="iosOk">Skjønner</button>`);
+    $("#iosOk").onclick = closeSheet;
+  }
+}
+function askInstall(){
+  let asked = false; try { asked = localStorage.getItem(INSTALL_KEY) === "1"; } catch {}
+  if (asked || isStandalone()) return;
+  try { localStorage.setItem(INSTALL_KEY, "1"); } catch {}
+  openSheet(`<h2>Vil du laste ned Unhook?</h2>
+    <p class="muted" style="margin-bottom:20px">Installer Unhook som en app på telefonen. Den får eget ikon på hjemskjermen, åpnes i fullskjerm og fungerer uten nett.</p>
+    ${!installEvent && isIOS() ? iosSteps() : ""}
+    <div style="display:grid;gap:10px">
+      ${installEvent ? '<button class="btn primary block" id="iYes">Installer</button>' : ""}
+      <button class="btn ghost block" id="iNo">${installEvent ? "Ikke nå" : "Lukk"}</button>
+    </div>
+    <p class="small muted" style="margin-top:14px">Du finner dette igjen under Mer.</p>`);
+  const y = $("#iYes"); if (y) y.onclick = doInstall;
+  $("#iNo").onclick = closeSheet;
+}
+function updateInstallBox(){
+  const show = canPWA && !isStandalone() && (installEvent || isIOS());
+  $("#installBox").classList.toggle("hidden", !show);
+  if (show) $("#installText").textContent = isIOS() && !installEvent
+    ? "Legg Unhook på hjemskjermen via Del-knappen i Safari."
+    : "Legg Unhook på hjemskjermen, så åpnes den som en vanlig app.";
+}
+$("#installBtn").onclick = doInstall;
+
+if (canPWA){
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+  window.addEventListener("beforeinstallprompt", e => {
+    e.preventDefault(); installEvent = e; updateInstallBox();
+    setTimeout(askInstall, 1200);
+  });
+  window.addEventListener("appinstalled", () => { installEvent = null; updateInstallBox(); toast("Unhook er installert"); });
+  // iOS har ikke beforeinstallprompt, så vis instruksjonene første gang.
+  if (isIOS()) setTimeout(askInstall, 1500);
+  updateInstallBox();
+}
+
+/* ---------- Oppsettsveiledning (første gang i Android-appen) ---------- */
+let obOpen = false, obStep = 0;
+const OB = [
+  { title: "Velkommen til Unhook",
+    body: `<p>Unhook følger med når du åpner sosiale medier, foreslår noe annet å gjøre, og kan sperre apper når du vil ha ro.</p><p>For at det skal virke, må telefonen gi appen noen tillatelser. Dette tar under ett minutt.</p>` },
+  { title: "Hvorfor vil du kutte ned?",
+    body: `<p>Skriv én setning til deg selv. Den vises i varslene når du åpner en av appene.</p>`,
+    extra: () => `<textarea id="obWhy" placeholder="Jeg vil kutte ned fordi …" style="margin-bottom:6px">${esc(S.why)}</textarea>` },
+  { title: "Slå på varsler",
+    body: `<p>Unhook gir beskjed når du åpner en av appene, og igjen etter 5, 10 og 15 minutter.</p>`,
+    check: () => !!callNative("notificationsEnabled"), okText: "Varsler er på",
+    action: "Slå på varsler", run: () => callNative("requestNotifications") },
+  { title: "Gi tilgang til bruksdata",
+    body: `<p>Da ser Unhook hvilken app som er åpen, og kan starte økter automatisk.</p><p>Trykk på knappen, finn <b>Unhook</b> i listen og slå på <b>Tillat tilgang til bruksdata</b>. Gå så tilbake hit.</p>`,
+    check: () => !!callNative("hasUsageAccess"), okText: "Tilgang er gitt",
+    action: "Åpne innstillinger", run: () => callNative("openUsageAccessSettings") },
+  { title: "Tillat visning over andre apper",
+    body: `<p>Dette trengs for at Unhook kan sperre apper i blokkeringstidene du velger.</p><p>Trykk på knappen og slå på bryteren for <b>Unhook</b>. Gå så tilbake hit.</p>`,
+    check: () => !!callNative("canDrawOverlays"), okText: "Tillatelse er gitt",
+    action: "Åpne innstillinger", run: () => callNative("openOverlaySettings") },
+  { title: "La Unhook kjøre i bakgrunnen",
+    body: `<p>Mange telefoner stopper apper i bakgrunnen for å spare batteri. Da får du ingen varsler.</p><p>Trykk på knappen, velg <b>Batteri</b> og så <b>Ubegrenset</b>. På Samsung bør du også sjekke at Unhook ikke står under <b>Sovende apper</b>.</p>`,
+    check: () => !!callNative("ignoresBatteryOptimizations"), okText: "Batterisparing er slått av for Unhook",
+    action: "Åpne app-innstillinger", run: () => callNative("openAppSettings") },
+  { title: "Alt er klart",
+    body: `<p>Unhook kjører nå i bakgrunnen, også når appen er lukket. Du ser det på varselet <b>Unhook følger med</b>.</p><p>Prøv å åpne Instagram eller en annen app i listen. Innen noen sekunder skal du få et forslag til noe annet å gjøre.</p>` }
+];
+function saveObWhy(){ const t = $("#obWhy"); if (t) { S.why = t.value; save(); } }
+function renderOnboard(){
+  const st = OB[obStep], last = obStep === OB.length - 1;
+  let status = "";
+  if (st.check){
+    const ok = st.check();
+    status = `<div class="ob-status ${ok ? "ok" : "no"}">${ok ? "✓ " + st.okText : "Ikke slått på ennå"}</div>
+      ${ok ? "" : `<button class="btn primary block" id="obAction">${st.action}</button>`}`;
+  }
+  $("#obInner").innerHTML = `
+    <div class="ob-top">
+      <div class="ob-dots">${OB.map((_, i) => `<i class="${i === obStep ? "on" : ""}"></i>`).join("")}</div>
+      ${last ? "" : '<button class="ob-skip" id="obSkip">Hopp over</button>'}
+    </div>
+    <div class="ob-num">${obStep + 1} av ${OB.length}</div>
+    <h2 class="ob-title">${st.title}</h2>
+    <div class="ob-body">${st.body}</div>
+    ${st.extra ? st.extra() : ""}
+    ${status}
+    <div class="ob-nav">
+      ${obStep > 0 ? '<button class="btn ghost" id="obBack">Tilbake</button>' : ""}
+      <button class="btn ${st.check && !st.check() ? "ghost" : "primary"}" id="obNext">${last ? "Ferdig" : obStep === 0 ? "Kom i gang" : st.check && !st.check() ? "Senere" : "Neste"}</button>
+    </div>`;
+  const a = $("#obAction"); if (a) a.onclick = st.run;
+  const b = $("#obBack"); if (b) b.onclick = () => { saveObWhy(); obStep--; renderOnboard(); };
+  const k = $("#obSkip"); if (k) k.onclick = () => { saveObWhy(); closeOnboard(); };
+  $("#obNext").onclick = () => { saveObWhy(); if (last) closeOnboard(); else { obStep++; renderOnboard(); $("#onboard").scrollTop = 0; } };
+}
+function openOnboard(){ obOpen = true; obStep = 0; $("#onboard").classList.remove("hidden"); renderOnboard(); }
+function closeOnboard(){ obOpen = false; S.onboarded = true; save(); $("#onboard").classList.add("hidden"); render(currentTab); }
+$("#setupBtn").onclick = openOnboard;
+if (NATIVE){
+  $("#setupBox").classList.remove("hidden");
+  if (!S.onboarded) openOnboard();
+}
+
+pullNative();
+renderHome();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>
