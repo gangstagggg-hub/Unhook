@@ -1,7 +1,7 @@
 // Unhook service worker.
 // index.html hentes alltid fra nettet først, så nye versjoner kommer automatisk.
 // Bump CACHE bare hvis du endrer ikoner eller manifest.
-const CACHE = "unhook-v2";
+const CACHE = "unhook-v3";
 const SHELL = ["./", "./index.html", "./manifest.json", "./icons/icon-192.png", "./icons/icon-512.png"];
 
 self.addEventListener("install", e => {
@@ -23,7 +23,8 @@ self.addEventListener("fetch", e => {
   // Sider: nett først, cache som reserve uten nett.
   if (req.mode === "navigate") {
     e.respondWith(
-      fetch(req)
+      // no-cache: spør alltid serveren om det finnes en nyere versjon, i stedet for å bruke nettleserens mellomlager.
+      fetch(req.url, { cache: "no-cache" })
         .then(res => { const copy = res.clone(); caches.open(CACHE).then(c => c.put("./index.html", copy)); return res; })
         .catch(() => caches.match("./index.html"))
     );

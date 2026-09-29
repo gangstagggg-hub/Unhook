@@ -25,7 +25,7 @@ docs/index.html        Web-appen (HTML, CSS og JS i én fil). Brukes også som g
 docs/manifest.json     PWA-manifest, så appen kan installeres
 docs/sw.js             Service worker for installasjon og bruk uten nett
 docs/icons/            App-ikoner
-android/               Android-appen (Kotlin)
+android/               Android-appen (Kotlin). Byggefilen for appen heter app/app.gradle.kts, ikke build.gradle.kts
   app/src/main/java/com/unhook/app/
     MainActivity.kt          Viser web-appen i en WebView
     Bridge.kt                Kobler web-appen til Android (window.Android)
