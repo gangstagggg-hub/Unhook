@@ -9,6 +9,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # Sann når opplastingsnøkkelen er lagt inn som hemmelighet i repoet.
+      HAS_SIGNING_KEY: ${{ secrets.UPLOAD_KEYSTORE_BASE64 != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -19,7 +22,7 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.9"
+          gradle-version: "8.13"
 
       - name: Bygg debug-APK
         working-directory: android
@@ -29,3 +32,23 @@ jobs:
         with:
           name: unhook-debug-apk
           path: android/app/build/outputs/apk/debug/*.apk
+
+      - name: Bygg signert release-AAB for Google Play
+        if: env.HAS_SIGNING_KEY == 'true'
+        working-directory: android
+        env:
+          KEYSTORE_BASE64: ${{ secrets.UPLOAD_KEYSTORE_BASE64 }}
+          UNHOOK_KEYSTORE_PASSWORD: ${{ secrets.UPLOAD_KEYSTORE_PASSWORD }}
+          UNHOOK_KEY_ALIAS: ${{ secrets.UPLOAD_KEY_ALIAS }}
+          UNHOOK_KEY_PASSWORD: ${{ secrets.UPLOAD_KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload.jks"
+          export UNHOOK_KEYSTORE_FILE="$RUNNER_TEMP/upload.jks"
+          gradle bundleRelease --no-daemon
+          rm -f "$RUNNER_TEMP/upload.jks"
+
+      - uses: actions/upload-artifact@v4
+        if: env.HAS_SIGNING_KEY == 'true'
+        with:
+          name: unhook-release-aab
+          path: android/app/build/outputs/bundle/release/*.aab
