@@ -99,7 +99,26 @@ class Bridge(private val activity: Activity) {
         return arr.toString()
     }
 
+    @JavascriptInterface
+    fun biometricAvailable(): Boolean = Biometric.available(activity)
+
+    /** Viser fingeravtrykk-vinduet. Svaret sendes tilbake til web-appen via MainActivity.sendBioResult. */
+    @JavascriptInterface
+    fun authenticateBiometric() {
+        activity.runOnUiThread {
+            Biometric.authenticate(activity) { ok -> (activity as? MainActivity)?.sendBioResult(ok) }
+        }
+    }
+
     /** Tid brukt i dag i de valgte appene (millisekunder). */
+    /** Web-appen melder fra om lys eller mørk modus, så status- og navigasjonsfeltet får riktig farge. */
+    @JavascriptInterface
+    fun setBarTheme(dark: Boolean) {
+        activity.runOnUiThread {
+            (activity as? MainActivity)?.applyBarTheme(dark)
+        }
+    }
+
     @JavascriptInterface
     fun dailyUsedMs(): Long = Store.dailyUsed(activity)
 

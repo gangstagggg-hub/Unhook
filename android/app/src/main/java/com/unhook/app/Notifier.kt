@@ -22,13 +22,13 @@ object Notifier {
     fun createChannels(c: Context) {
         val nm = c.getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(
-            NotificationChannel(CHANNEL_MONITOR, "Overvåking", NotificationManager.IMPORTANCE_MIN).apply {
-                description = "Vises mens Unhook følger med på skjermtiden"
+            NotificationChannel(CHANNEL_MONITOR, "Monitoring", NotificationManager.IMPORTANCE_MIN).apply {
+                description = "Shown while Unhook keeps track of your screen time"
             }
         )
         nm.createNotificationChannel(
-            NotificationChannel(CHANNEL_ALERTS, "Scrollevarsler", NotificationManager.IMPORTANCE_HIGH).apply {
-                description = "Varsel når du har scrollet i 5 minutter, og når en app er blokkert"
+            NotificationChannel(CHANNEL_ALERTS, "Scroll alerts", NotificationManager.IMPORTANCE_HIGH).apply {
+                description = "Suggestions when you open an app and after 5, 10 and 15 minutes, and when an app is locked"
             }
         )
     }
@@ -47,30 +47,30 @@ object Notifier {
         val pi = PendingIntent.getActivity(
             c, 1, homeIntent(), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
-        return Notification.Action.Builder(Icon.createWithResource(c, R.drawable.ic_stat_unhook), "Til hjemskjermen", pi).build()
+        return Notification.Action.Builder(Icon.createWithResource(c, R.drawable.ic_stat_unhook), "Go to home screen", pi).build()
     }
 
     fun monitor(c: Context): Notification = Notification.Builder(c, CHANNEL_MONITOR)
         .setSmallIcon(R.drawable.ic_stat_unhook)
-        .setContentTitle("Unhook følger med")
-        .setContentText("Du får varsel etter 5 minutter med scrolling.")
+        .setContentTitle("Unhook is watching")
+        .setContentText("You get a suggestion when you open one of your apps.")
         .setContentIntent(openApp(c))
         .setOngoing(true)
         .build()
 
     private var lastAlt: String? = null
 
-    /** Velger et alternativ fra listen (ikke det samme som sist) og lager «Hva med å …?». */
+    /** Velger et alternativ fra listen (ikke det samme som sist) og lager «How about …?». */
     private fun suggestion(settings: JSONObject): String {
         val arr = settings.optJSONArray("alternatives")
         val all = (0 until (arr?.length() ?: 0)).map { arr!!.optString(it) }.filter { it.isNotBlank() }
         val pool = if (all.size > 1) all.filter { it != lastAlt } else all
-        val alt = if (pool.isNotEmpty()) pool[Random.nextInt(pool.size)] else "Legge bort telefonen en stund"
+        val alt = if (pool.isNotEmpty()) pool[Random.nextInt(pool.size)] else "Putting the phone away for a while"
         lastAlt = alt
         var t = alt.trim().trimEnd('.', '!', '?')
         val acronym = t.length > 1 && t[1].isUpperCase()
         if (!acronym) t = t.replaceFirstChar { it.lowercase() }
-        return "Hva med å $t?"
+        return "How about $t?"
     }
 
     private fun suggestionNotification(c: Context, title: String, body: String): Notification =
@@ -87,7 +87,7 @@ object Notifier {
     /** Sendes med en gang du åpner en av de valgte appene. */
     fun opened(c: Context, app: String, settings: JSONObject) {
         val why = settings.optString("why").trim()
-        val body = if (why.isNotEmpty()) why else "Du åpnet $app."
+        val body = if (why.isNotEmpty()) why else "You opened $app."
         post(c, ID_ALERT, suggestionNotification(c, suggestion(settings), body))
     }
 
@@ -95,7 +95,7 @@ object Notifier {
     fun overLimit(c: Context, minutes: Int, app: String, settings: JSONObject) {
         val why = settings.optString("why").trim()
         val body = buildString {
-            append("Du har vært på $app i $minutes minutter.")
+            append("You have been on $app for $minutes minutes.")
             if (why.isNotEmpty()) append("\n\n").append(why)
         }
         post(c, ID_ALERT, suggestionNotification(c, suggestion(settings), body))
@@ -105,8 +105,8 @@ object Notifier {
     fun blocked(c: Context, app: String, until: String) {
         val n = Notification.Builder(c, CHANNEL_ALERTS)
             .setSmallIcon(R.drawable.ic_stat_unhook)
-            .setContentTitle("$app er blokkert")
-            .setContentText("Blokkeringen varer til $until.")
+            .setContentTitle("$app is locked")
+            .setContentText("The lock lasts until $until.")
             .setContentIntent(openApp(c))
             .addAction(homeAction(c))
             .setAutoCancel(true)

@@ -1,8 +1,8 @@
 {
   "name": "Unhook",
   "short_name": "Unhook",
-  "description": "Kutt ned på doom scrolling",
-  "lang": "no",
+  "description": "Cut down on doom scrolling",
+  "lang": "en",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

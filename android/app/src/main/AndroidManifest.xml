@@ -8,11 +8,11 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Fingeravtrykk for å låse opp appen. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Trengs for å vise blokkeringsskjermen over andre apper. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <!-- Kun for Google Fonts. Appen fungerer uten nett. -->
-    <uses-permission android:name="android.permission.INTERNET" />
 
     <!-- Lar appen liste opp installerte apper, så du kan velge dem i stedet for å skrive navnet. -->
     <queries>

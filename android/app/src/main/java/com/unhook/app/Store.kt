@@ -41,6 +41,18 @@ object Store {
         return total
     }
 
+    /** Når Unhook selv er låst til (ms siden 1970), eller 0. Lagres, så låsen overlever omstart. */
+    @Synchronized
+    fun unhookLockedUntil(c: Context): Long {
+        val u = prefs(c).getLong("selfLockUntil", 0L)
+        return if (u > System.currentTimeMillis()) u else 0L
+    }
+
+    @Synchronized
+    fun lockUnhook(c: Context, untilMs: Long) {
+        if (untilMs > prefs(c).getLong("selfLockUntil", 0L)) prefs(c).edit().putLong("selfLockUntil", untilMs).apply()
+    }
+
     fun saveSettings(c: Context, json: String) {
         prefs(c).edit().putString("settings", json).apply()
     }

@@ -19,7 +19,11 @@ class BlockActivity : ComponentActivity() {
         const val EXTRA_UNTIL = "until"
         const val EXTRA_TIMEOUT = "timeout"
         const val EXTRA_DAILY = "daily"
+        /** Unhook selv er låst (se «Lock Unhook too»). */
+        const val EXTRA_SELF = "self"
     }
+
+    private var self = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,12 +47,14 @@ class BlockActivity : ComponentActivity() {
         val until = intent.getStringExtra(EXTRA_UNTIL).orEmpty()
         val timeout = intent.getBooleanExtra(EXTRA_TIMEOUT, false)
         val daily = intent.getBooleanExtra(EXTRA_DAILY, false)
+        self = intent.getBooleanExtra(EXTRA_SELF, false)
 
         val title = TextView(this).apply {
             text = when {
-                daily -> "Dagens grense er nådd"
-                timeout -> "Tiden er brukt opp"
-                else -> "$app er blokkert"
+                self -> "Unhook is locked"
+                daily -> "Today's limit has been reached"
+                timeout -> "Time is up"
+                else -> "$app is locked"
             }
             textSize = 32f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
@@ -56,17 +62,18 @@ class BlockActivity : ComponentActivity() {
         }
         val body = TextView(this).apply {
             text = when {
-                daily -> "Alle appene på lista er sperret resten av dagen. De åpner igjen ved midnatt."
-                timeout -> "Alle appene på lista er sperret til kl. $until. Gjør noe annet en stund."
-                until.isNotEmpty() -> "Blokkeringen varer til $until. Gjør noe annet en stund."
-                else -> "Gjør noe annet en stund."
+                self -> "Unhook is locked together with your apps until $until. Do something else for a while."
+                daily -> "All the apps on your list are locked for the rest of the day. They open again at midnight."
+                timeout -> "All the apps on your list are locked until $until. Do something else for a while."
+                until.isNotEmpty() -> "The lock lasts until $until. Do something else for a while."
+                else -> "Do something else for a while."
             }
             textSize = 17f
             setTextColor(getColor(R.color.muted))
             setPadding(0, dp(12), 0, dp(32))
         }
         val home = Button(this).apply {
-            text = "Til hjemskjermen"
+            text = "Go to home screen"
             isAllCaps = false
             textSize = 16f
             setTextColor(getColor(R.color.accent_ink))
@@ -74,7 +81,7 @@ class BlockActivity : ComponentActivity() {
             setOnClickListener { goHome() }
         }
         val open = Button(this, null, android.R.attr.borderlessButtonStyle).apply {
-            text = "Åpne Unhook"
+            text = "Open Unhook"
             isAllCaps = false
             textSize = 16f
             setTextColor(getColor(R.color.accent))
@@ -84,7 +91,7 @@ class BlockActivity : ComponentActivity() {
             }
         }
 
-        setContentView(LinearLayout(this).apply {
+        val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_VERTICAL
             setBackgroundColor(getColor(R.color.bg))
@@ -92,12 +99,16 @@ class BlockActivity : ComponentActivity() {
             addView(title)
             addView(body)
             addView(home, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(56)))
-            addView(open, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(56)))
-        })
+            if (!self) addView(open, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(56)))
+        }
+        setContentView(content)
+        // Holder innholdet unna statuslinjen og navigasjonsfeltet (appen tegnes ut til kantene).
+        Insets.applyPadding(content, dp(28))
     }
 
     private fun goHome() {
         startActivity(Notifier.homeIntent())
-        finish()
+        // Når Unhook er låst, lukkes den også, så den ikke ligger klar i bakgrunnen.
+        if (self) finishAffinity() else finish()
     }
 }
